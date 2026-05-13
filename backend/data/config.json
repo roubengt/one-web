@@ -1,0 +1,172 @@
+{
+  "slogan": "NO SOMOS UN GIMNASIO, SOMOS ONE.",
+  "sobreOne": "Somos un gimnasio boutique con un enfoque integral y personalizado. Diseñamos planes a medida, combinando entrenamiento, rehabilitación kinesiológica y nutrición, para lograr resultados reales y seguros.",
+  "sobreOneFrase": "Aquí te espera un servicio premium y una experiencia de entrenamiento de alto nivel.",
+  "horarioSemana": "Lunes a Viernes: 6:30 a 21:00 hrs.",
+  "horarioSabado": "Sábados: 10:00 a 13:00 hrs. (solo recuperativos)",
+  "fuenteTitulos": "Oswald",
+  "profesores": [
+    {
+      "nombre": "Mariana",
+      "foto": ""
+    },
+    {
+      "nombre": "Mario",
+      "foto": ""
+    }
+  ],
+  "planes": [
+    {
+      "nombre": "PLAN PERSONAL",
+      "descripcion": "Sesiones uno a uno con tu Coach",
+      "precios": [
+        {
+          "frecuencia": "2 veces x semana",
+          "valor": "$230.000"
+        },
+        {
+          "frecuencia": "3 veces x semana",
+          "valor": "$260.000"
+        },
+        {
+          "frecuencia": "4 veces x semana",
+          "valor": "$290.000"
+        }
+      ]
+    },
+    {
+      "nombre": "PLAN DÚO",
+      "descripcion": "Entrenan juntos con un mismo Coach. (Valor por persona)",
+      "precios": [
+        {
+          "frecuencia": "2 veces x semana",
+          "valor": "$295.000"
+        },
+        {
+          "frecuencia": "3 veces x semana",
+          "valor": "$340.000"
+        },
+        {
+          "frecuencia": "4 veces x semana",
+          "valor": "$380.000"
+        },
+        {
+          "frecuencia": "5 veces x semana",
+          "valor": "$430.000"
+        }
+      ]
+    },
+    {
+      "nombre": "PLAN 3",
+      "descripcion": "Sesiones en grupos de 3 personas con un Coach en común.",
+      "precios": [
+        {
+          "frecuencia": "2 veces x semana",
+          "valor": "$125.000"
+        },
+        {
+          "frecuencia": "3 veces x semana",
+          "valor": "$150.000"
+        }
+      ]
+    },
+    {
+      "nombre": "PLAN 4",
+      "descripcion": "Sesiones en grupos de 4 personas con un Coach en común.",
+      "precios": [
+        {
+          "frecuencia": "2 veces x semana",
+          "valor": "$110.000"
+        },
+        {
+          "frecuencia": "3 veces x semana",
+          "valor": "$130.000"
+        }
+      ]
+    },
+    {
+      "nombre": "PLAN 6",
+      "descripcion": "Sesiones en grupos de 6 personas con un Coach en común.",
+      "precios": [
+        {
+          "frecuencia": "2 veces x semana",
+          "valor": "$85.000"
+        },
+        {
+          "frecuencia": "3 veces x semana",
+          "valor": "$95.000"
+        },
+        {
+          "frecuencia": "4 veces x semana",
+          "valor": "$110.000"
+        },
+        {
+          "frecuencia": "5 veces x semana",
+          "valor": "$125.000"
+        }
+      ]
+    },
+    {
+      "nombre": "PASE DIARIO",
+      "descripcion": "Permite asistir a una clase personal o grupal, según disponibilidad de horario.",
+      "precios": [
+        {
+          "frecuencia": "Por sesión",
+          "valor": "$12.000"
+        }
+      ]
+    }
+  ],
+  "reglamento": [
+    {
+      "titulo": "HORARIO",
+      "items": [
+        "Lunes a Viernes: 6:30 a 21:00 hrs.",
+        "Sábados: 10:00 a 13:00 hrs. (solo recuperativos)",
+        "Los sábados funcionan exclusivamente para recuperación de clases previamente canceladas."
+      ]
+    },
+    {
+      "titulo": "CONVIVENCIA Y ORDEN",
+      "items": [
+        "Mantener un trato adecuado entre alumnos, profesores y equipo.",
+        "Cada persona es responsable de cuidar el espacio y el equipamiento.",
+        "Es obligatorio el uso de toalla personal.",
+        "Toda bebida retirada debe informarse y ser pagada."
+      ]
+    },
+    {
+      "titulo": "PLANES Y PAGOS",
+      "items": [
+        "Todos los planes tienen duración de un mes con número fijo de sesiones.",
+        "La mensualidad debe cancelarse a más tardar el día 3 de cada mes.",
+        "Los planes son personales e intransferibles.",
+        "No se realizan devoluciones por inasistencia o abandono."
+      ]
+    },
+    {
+      "titulo": "CLASES",
+      "items": [
+        "Cada clase debe agendarse con profesores o administración.",
+        "La clase finaliza en el horario estipulado independiente de la hora de llegada.",
+        "Las clases deben cancelarse con mínimo 3 horas de anticipación."
+      ]
+    },
+    {
+      "titulo": "RECUPERACIÓN",
+      "items": [
+        "En planes personales: una clase cancelada puede reagendarse dentro del mismo mes.",
+        "En clases grupales: puede recuperarse solo si existe cupo disponible.",
+        "ONE no está obligado a reorganizar su planificación por inasistencias."
+      ]
+    },
+    {
+      "titulo": "RESPONSABILIDAD",
+      "items": [
+        "ONE no se hace responsable por lesiones derivadas del uso incorrecto.",
+        "Cada persona es responsable de sus pertenencias personales.",
+        "ONE no responde por pérdidas u olvidos dentro del recinto."
+      ]
+    }
+  ]
+}

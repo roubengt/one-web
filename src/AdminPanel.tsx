@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { obtenerConfig, guardarConfig } from './services/api'
 
 const CARD   = '#141414'
 const BORDER = '#2a2a2a'
@@ -49,29 +50,46 @@ const AdminPanel = ({ onLogout }: Props) => {
   const [seccion, setSeccion]           = useState('general')
   const [data, setData]                 = useState(defaultData)
   const [guardado, setGuardado]         = useState(false)
+  const [cargando, setCargando]         = useState(true)
   const [nuevaClave, setNuevaClave]     = useState('')
   const [confirmarClave, setConfirmarClave] = useState('')
   const [errorClave, setErrorClave]     = useState('')
   const [exitoClave, setExitoClave]     = useState('')
-  const fileRefs                        = useRef<(HTMLInputElement | null)[]>([])
+  const fileRefs = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
-    const saved = localStorage.getItem('one_web_data')
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        if (parsed.profesores && typeof parsed.profesores[0] === 'string') {
-          parsed.profesores = parsed.profesores.map((nombre: string) => ({ nombre, foto: '' }))
+    const cargar = async () => {
+      setCargando(true)
+      const remoto = await obtenerConfig()
+      if (remoto && Object.keys(remoto).length > 0) {
+        if (remoto.profesores && typeof remoto.profesores[0] === 'string') {
+          remoto.profesores = remoto.profesores.map((nombre: string) => ({ nombre, foto: '' }))
         }
-        setData({ ...defaultData, ...parsed })
-      } catch {}
+        setData({ ...defaultData, ...remoto })
+      } else {
+        const saved = localStorage.getItem('one_web_data')
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved)
+            if (parsed.profesores && typeof parsed.profesores[0] === 'string') {
+              parsed.profesores = parsed.profesores.map((nombre: string) => ({ nombre, foto: '' }))
+            }
+            setData({ ...defaultData, ...parsed })
+          } catch {}
+        }
+      }
+      setCargando(false)
     }
+    cargar()
   }, [])
 
-  const guardar = () => {
+  const guardar = async () => {
+    const resultado = await guardarConfig(data)
     localStorage.setItem('one_web_data', JSON.stringify(data))
-    setGuardado(true)
-    setTimeout(() => setGuardado(false), 3000)
+    if (resultado) {
+      setGuardado(true)
+      setTimeout(() => setGuardado(false), 3000)
+    }
   }
 
   const cambiarClave = () => {
@@ -115,7 +133,6 @@ const AdminPanel = ({ onLogout }: Props) => {
   const agregarReglItem    = (ri: number) => { const r = [...data.reglamento]; r[ri].items.push('Nueva regla'); setData({ ...data, reglamento: r }) }
   const eliminarReglItem   = (ri: number, ii: number) => { const r = [...data.reglamento]; r[ri].items = r[ri].items.filter((_, i) => i !== ii); setData({ ...data, reglamento: r }) }
 
-  // Estilos reutilizables
   const inp: React.CSSProperties = {
     width: '100%', padding: '10px 14px', marginBottom: '16px',
     backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`,
@@ -137,7 +154,6 @@ const AdminPanel = ({ onLogout }: Props) => {
     transition: 'all 0.2s',
     fontFamily: 'Inter, sans-serif', fontWeight: seccion === s ? 500 : 300,
   })
-
   const cardStyle: React.CSSProperties = {
     backgroundColor: CARD, border: `1px solid ${BORDER}`,
     padding: '28px', borderRadius: '2px', marginBottom: '20px',
@@ -152,6 +168,15 @@ const AdminPanel = ({ onLogout }: Props) => {
     { id: 'horarios',   label: 'Horarios' },
     { id: 'cuenta',     label: 'Mi Cuenta' },
   ]
+
+  if (cargando) return (
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontFamily: 'Impact, sans-serif', fontSize: '32px', color: 'white', marginBottom: '16px' }}>ONE</div>
+        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#444', letterSpacing: '3px' }}>CARGANDO...</p>
+      </div>
+    </div>
+  )
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', display: 'flex' }}>
@@ -168,53 +193,27 @@ const AdminPanel = ({ onLogout }: Props) => {
       `}</style>
 
       {/* SIDEBAR */}
-      <aside style={{
-        width: '200px', backgroundColor: '#080808',
-        borderRight: `1px solid ${BORDER}`, padding: '0',
-        flexShrink: 0, display: 'flex', flexDirection: 'column',
-      }}>
-        {/* Logo sidebar */}
+      <aside style={{ width: '200px', backgroundColor: '#080808', borderRight: `1px solid ${BORDER}`, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '28px 24px', borderBottom: `1px solid ${BORDER}` }}>
-          <div style={{
-            fontFamily: 'Impact, Arial Black, sans-serif',
-            fontSize: '28px', color: 'white',
-            letterSpacing: '2px', lineHeight: 1,
-          }}>ONE</div>
-          <div style={{
-            fontFamily: 'Inter, sans-serif', fontSize: '9px',
-            letterSpacing: '3px', color: '#333', marginTop: '6px', fontWeight: 500,
-          }}>ADMIN PANEL</div>
+          <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '28px', color: 'white', letterSpacing: '2px' }}>ONE</div>
+          <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', letterSpacing: '3px', color: '#333', marginTop: '6px', fontWeight: 500 }}>ADMIN PANEL</div>
         </div>
-
-        {/* Nav */}
         <nav style={{ flex: 1, paddingTop: '16px' }}>
           {secciones.map(s => (
-            <button key={s.id} onClick={() => setSeccion(s.id)} className="nav-item" style={secBtn(s.id)}>
-              {s.label}
-            </button>
+            <button key={s.id} onClick={() => setSeccion(s.id)} className="nav-item" style={secBtn(s.id)}>{s.label}</button>
           ))}
         </nav>
-
-        {/* Logout */}
         <div style={{ padding: '20px 24px', borderTop: `1px solid ${BORDER}` }}>
-          <button onClick={onLogout} style={{
-            width: '100%', padding: '10px 14px',
-            border: `1px solid ${BORDER}`, backgroundColor: 'transparent',
-            color: '#555', fontSize: '11px', letterSpacing: '1px',
-            cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 400,
-            transition: 'all 0.2s',
-          }}>Cerrar sesión</button>
+          <button onClick={onLogout} style={{ width: '100%', padding: '10px 14px', border: `1px solid ${BORDER}`, backgroundColor: 'transparent', color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 400, transition: 'all 0.2s' }}>
+            Cerrar sesión
+          </button>
         </div>
       </aside>
 
       {/* MAIN */}
       <main style={{ flex: 1, overflowY: 'auto' }}>
         {/* Header */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '28px 40px', borderBottom: `1px solid ${BORDER}`,
-          backgroundColor: '#0a0a0a', position: 'sticky', top: 0, zIndex: 10,
-        }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '28px 40px', borderBottom: `1px solid ${BORDER}`, backgroundColor: '#0a0a0a', position: 'sticky', top: 0, zIndex: 10 }}>
           <div>
             <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: '20px', fontWeight: 600, color: 'white' }}>
               {secciones.find(s => s.id === seccion)?.label}
@@ -260,9 +259,7 @@ const AdminPanel = ({ onLogout }: Props) => {
             <div style={{ maxWidth: '640px' }}>
               <div style={cardStyle}>
                 <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Tipografía de títulos</h2>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '28px', fontWeight: 300 }}>
-                  Selecciona la fuente para todos los títulos de la página web.
-                </p>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '28px', fontWeight: 300 }}>Selecciona la fuente para todos los títulos de la página web.</p>
                 <div style={{ display: 'grid', gap: '10px' }}>
                   {FUENTES_OPCIONES.map(f => {
                     const sel = data.fuenteTitulos === f
@@ -274,9 +271,7 @@ const AdminPanel = ({ onLogout }: Props) => {
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         borderRadius: '2px',
                       }}>
-                        <span style={{ fontFamily: FUENTES_MAP[f], fontSize: '26px', color: 'white', fontWeight: 900 }}>
-                          ONE YOUR EVOLUTION
-                        </span>
+                        <span style={{ fontFamily: FUENTES_MAP[f], fontSize: '26px', color: 'white', fontWeight: 900 }}>ONE YOUR EVOLUTION</span>
                         <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', letterSpacing: '2px', color: sel ? 'white' : '#444', fontWeight: 500 }}>
                           {sel ? '✓ ACTIVA' : f.toUpperCase()}
                         </span>
@@ -296,20 +291,11 @@ const AdminPanel = ({ onLogout }: Props) => {
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '28px', fontWeight: 300, lineHeight: 1.6 }}>
                   Agrega el nombre y foto de cada coach. Puedes subir una imagen directamente desde tu computador.
                 </p>
-
                 {data.profesores.map((prof, i) => (
                   <div key={i} style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '20px', marginBottom: '12px' }}>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-
-                      {/* Foto preview + upload */}
                       <div style={{ flexShrink: 0 }}>
-                        <div style={{
-                          width: '80px', height: '80px',
-                          backgroundColor: '#1a1a1a', border: `1px solid ${BORDER}`,
-                          borderRadius: '2px', overflow: 'hidden',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          marginBottom: '8px',
-                        }}>
+                        <div style={{ width: '80px', height: '80px', backgroundColor: '#1a1a1a', border: `1px solid ${BORDER}`, borderRadius: '2px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
                           {prof.foto ? (
                             <img src={prof.foto} alt={prof.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
@@ -318,90 +304,31 @@ const AdminPanel = ({ onLogout }: Props) => {
                             </span>
                           )}
                         </div>
-
-                        {/* Input file oculto */}
-                        <input
-                          type="file" accept="image/*"
+                        <input type="file" accept="image/*"
                           ref={el => { fileRefs.current[i] = el }}
                           style={{ display: 'none' }}
-                          onChange={e => {
-                            const file = e.target.files?.[0]
-                            if (file) subirFoto(i, file)
-                          }}
+                          onChange={e => { const file = e.target.files?.[0]; if (file) subirFoto(i, file) }}
                         />
-
-                        <button
-                          className="upload-btn"
-                          onClick={() => fileRefs.current[i]?.click()}
-                          style={{
-                            width: '80px', padding: '6px 0',
-                            backgroundColor: 'transparent',
-                            border: `1px solid ${BORDER}`,
-                            color: '#555', fontSize: '10px',
-                            letterSpacing: '1px', cursor: 'pointer',
-                            fontFamily: 'Inter, sans-serif', fontWeight: 500,
-                            transition: 'all 0.2s',
-                          }}
-                        >
+                        <button className="upload-btn" onClick={() => fileRefs.current[i]?.click()} style={{ width: '80px', padding: '6px 0', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '10px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, transition: 'all 0.2s' }}>
                           {prof.foto ? 'CAMBIAR' : 'SUBIR'}
                         </button>
-
                         {prof.foto && (
-                          <button
-                            onClick={() => actualizarProfesor(i, 'foto', '')}
-                            style={{
-                              width: '80px', padding: '6px 0', marginTop: '4px',
-                              backgroundColor: 'transparent',
-                              border: `1px solid #2a1a1a`,
-                              color: '#ff6b6b', fontSize: '10px',
-                              letterSpacing: '1px', cursor: 'pointer',
-                              fontFamily: 'Inter, sans-serif', fontWeight: 500,
-                              display: 'block',
-                            }}
-                          >
+                          <button onClick={() => actualizarProfesor(i, 'foto', '')} style={{ width: '80px', padding: '6px 0', marginTop: '4px', backgroundColor: 'transparent', border: '1px solid #2a1a1a', color: '#ff6b6b', fontSize: '10px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, display: 'block' }}>
                             QUITAR
                           </button>
                         )}
                       </div>
-
-                      {/* Nombre */}
                       <div style={{ flex: 1 }}>
                         <span style={lbl}>NOMBRE</span>
-                        <input
-                          value={prof.nombre}
-                          onChange={e => actualizarProfesor(i, 'nombre', e.target.value)}
-                          style={{ ...inp, marginBottom: 0 }}
-                        />
+                        <input value={prof.nombre} onChange={e => actualizarProfesor(i, 'nombre', e.target.value)} style={{ ...inp, marginBottom: 0 }} />
                       </div>
-
-                      {/* Eliminar */}
-                      <button
-                        className="btn-eliminar"
-                        onClick={() => eliminarProfesor(i)}
-                        style={{
-                          padding: '8px 12px', backgroundColor: '#1a0a0a',
-                          border: '1px solid #ff6b6b', color: '#ff6b6b',
-                          cursor: 'pointer', fontSize: '14px', flexShrink: 0,
-                          transition: 'background-color 0.2s',
-                        }}
-                      >✕</button>
+                      <button className="btn-eliminar" onClick={() => eliminarProfesor(i)} style={{ padding: '8px 12px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0, transition: 'background-color 0.2s' }}>✕</button>
                     </div>
                   </div>
                 ))}
-
-                <button
-                  className="btn-agregar"
-                  onClick={agregarProfesor}
-                  style={{
-                    width: '100%', padding: '14px',
-                    backgroundColor: 'transparent',
-                    border: `1px solid ${BORDER}`,
-                    color: '#555', fontSize: '12px',
-                    letterSpacing: '2px', cursor: 'pointer',
-                    marginTop: '8px', transition: 'all 0.2s',
-                    fontFamily: 'Inter, sans-serif', fontWeight: 500,
-                  }}
-                >+ Agregar Coach</button>
+                <button className="btn-agregar" onClick={agregarProfesor} style={{ width: '100%', padding: '14px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', marginTop: '8px', transition: 'all 0.2s', fontFamily: 'Inter, sans-serif', fontWeight: 500 }}>
+                  + Agregar Coach
+                </button>
               </div>
             </div>
           )}
@@ -419,16 +346,12 @@ const AdminPanel = ({ onLogout }: Props) => {
                   <span style={lbl}>PRECIOS</span>
                   {plan.precios.map((p, ji) => (
                     <div key={ji} style={{ display: 'flex', gap: '12px', marginBottom: '10px', alignItems: 'center' }}>
-                      <input value={p.frecuencia} onChange={e => actualizarPrecio(pi, ji, 'frecuencia', e.target.value)}
-                        style={{ ...inp, flex: 2, marginBottom: 0 }} placeholder="Frecuencia" />
-                      <input value={p.valor} onChange={e => actualizarPrecio(pi, ji, 'valor', e.target.value)}
-                        style={{ ...inp, flex: 1, marginBottom: 0 }} placeholder="$0" />
-                      <button className="btn-eliminar" onClick={() => eliminarPrecio(pi, ji)}
-                        style={{ padding: '10px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0 }}>✕</button>
+                      <input value={p.frecuencia} onChange={e => actualizarPrecio(pi, ji, 'frecuencia', e.target.value)} style={{ ...inp, flex: 2, marginBottom: 0 }} placeholder="Frecuencia" />
+                      <input value={p.valor} onChange={e => actualizarPrecio(pi, ji, 'valor', e.target.value)} style={{ ...inp, flex: 1, marginBottom: 0 }} placeholder="$0" />
+                      <button className="btn-eliminar" onClick={() => eliminarPrecio(pi, ji)} style={{ padding: '10px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0 }}>✕</button>
                     </div>
                   ))}
-                  <button className="btn-agregar" onClick={() => agregarPrecio(pi)}
-                    style={{ padding: '8px 20px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', marginTop: '8px', fontFamily: 'Inter, sans-serif' }}>
+                  <button className="btn-agregar" onClick={() => agregarPrecio(pi)} style={{ padding: '8px 20px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', marginTop: '8px', fontFamily: 'Inter, sans-serif' }}>
                     + Agregar precio
                   </button>
                 </div>
@@ -443,20 +366,15 @@ const AdminPanel = ({ onLogout }: Props) => {
                 <div key={ri} style={cardStyle}>
                   <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '20px' }}>{reg.titulo}</h2>
                   <span style={lbl}>TÍTULO DE SECCIÓN</span>
-                  <input value={reg.titulo}
-                    onChange={e => { const r = [...data.reglamento]; r[ri] = { ...r[ri], titulo: e.target.value }; setData({ ...data, reglamento: r }) }}
-                    style={inp} />
+                  <input value={reg.titulo} onChange={e => { const r = [...data.reglamento]; r[ri] = { ...r[ri], titulo: e.target.value }; setData({ ...data, reglamento: r }) }} style={inp} />
                   <span style={lbl}>REGLAS</span>
                   {reg.items.map((item, ii) => (
                     <div key={ii} style={{ display: 'flex', gap: '12px', marginBottom: '10px', alignItems: 'flex-start' }}>
-                      <textarea value={item} onChange={e => actualizarReglItem(ri, ii, e.target.value)}
-                        style={{ ...ta, flex: 1, marginBottom: 0, minHeight: '56px' }} />
-                      <button className="btn-eliminar" onClick={() => eliminarReglItem(ri, ii)}
-                        style={{ padding: '10px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0, marginTop: '2px' }}>✕</button>
+                      <textarea value={item} onChange={e => actualizarReglItem(ri, ii, e.target.value)} style={{ ...ta, flex: 1, marginBottom: 0, minHeight: '56px' }} />
+                      <button className="btn-eliminar" onClick={() => eliminarReglItem(ri, ii)} style={{ padding: '10px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0, marginTop: '2px' }}>✕</button>
                     </div>
                   ))}
-                  <button className="btn-agregar" onClick={() => agregarReglItem(ri)}
-                    style={{ padding: '8px 20px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', marginTop: '8px', fontFamily: 'Inter, sans-serif' }}>
+                  <button className="btn-agregar" onClick={() => agregarReglItem(ri)} style={{ padding: '8px 20px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', marginTop: '8px', fontFamily: 'Inter, sans-serif' }}>
                     + Agregar regla
                   </button>
                 </div>
@@ -497,12 +415,9 @@ const AdminPanel = ({ onLogout }: Props) => {
                 <input type="password" value={nuevaClave} onChange={e => setNuevaClave(e.target.value)} placeholder="Mínimo 6 caracteres" style={inp} />
                 <span style={lbl}>CONFIRMAR CONTRASEÑA</span>
                 <input type="password" value={confirmarClave} onChange={e => setConfirmarClave(e.target.value)} placeholder="Repite la contraseña" style={{ ...inp, marginBottom: '20px' }} />
-                <button onClick={cambiarClave} style={{
-                  width: '100%', padding: '14px', backgroundColor: 'white',
-                  border: 'none', color: '#000', fontSize: '12px',
-                  letterSpacing: '2px', cursor: 'pointer',
-                  fontFamily: 'Inter, sans-serif', fontWeight: 600,
-                }}>Actualizar contraseña</button>
+                <button onClick={cambiarClave} style={{ width: '100%', padding: '14px', backgroundColor: 'white', border: 'none', color: '#000', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+                  Actualizar contraseña
+                </button>
               </div>
             </div>
           )}

@@ -53,11 +53,23 @@ const App = () => {
   const [seccionActiva, setSeccionActiva] = useState('inicio')
   const [scrolled, setScrolled]         = useState(false)
 
-  useEffect(() => {
-    if (window.location.pathname === '/admin') {
-      const logged = localStorage.getItem('one_admin_logged') === 'true'
-      setVista(logged ? 'admin' : 'login')
-    }
+useEffect(() => {
+  if (window.location.pathname === '/admin') {
+    const logged = localStorage.getItem('one_admin_logged') === 'true'
+    setVista(logged ? 'admin' : 'login')
+  }
+  const cargar = async () => {
+    try {
+      const res    = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/config`)
+      const remoto = await res.json()
+      if (remoto && Object.keys(remoto).length > 0) {
+        if (remoto.profesores && typeof remoto.profesores[0] === 'string') {
+          remoto.profesores = remoto.profesores.map((nombre: string) => ({ nombre, foto: '' }))
+        }
+        setWebData({ ...defaultData, ...remoto })
+        return
+      }
+    } catch {}
     const saved = localStorage.getItem('one_web_data')
     if (saved) {
       try {
@@ -68,7 +80,9 @@ const App = () => {
         setWebData({ ...defaultData, ...parsed })
       } catch {}
     }
-  }, [])
+  }
+  cargar()
+}, [])
 
   useEffect(() => {
     const handleScroll = () => {
