@@ -128,6 +128,8 @@ const AdminPanel = ({ onLogout }: Props) => {
   }
   const agregarPrecio  = (pi: number) => { const pl = [...data.planes]; pl[pi].precios.push({ frecuencia: 'X veces x semana', valor: '$0' }); setData({ ...data, planes: pl }) }
   const eliminarPrecio = (pi: number, ji: number) => { const pl = [...data.planes]; pl[pi].precios = pl[pi].precios.filter((_, i) => i !== ji); setData({ ...data, planes: pl }) }
+  const agregarPlan    = () => setData({ ...data, planes: [...data.planes, { nombre: 'NUEVO PLAN', descripcion: 'Descripción del plan', precios: [{ frecuencia: '2 veces x semana', valor: '$0' }] }] })
+  const eliminarPlan   = (pi: number) => { if (!window.confirm('¿Eliminar este plan?')) return; setData({ ...data, planes: data.planes.filter((_, i) => i !== pi) }) }
 
   const actualizarReglItem = (ri: number, ii: number, val: string) => { const r = [...data.reglamento]; r[ri].items[ii] = val; setData({ ...data, reglamento: r }) }
   const agregarReglItem    = (ri: number) => { const r = [...data.reglamento]; r[ri].items.push('Nueva regla'); setData({ ...data, reglamento: r }) }
@@ -236,7 +238,6 @@ const AdminPanel = ({ onLogout }: Props) => {
           </button>
         </div>
 
-        {/* Contenido */}
         <div style={{ padding: '36px 40px' }}>
 
           {/* GENERAL */}
@@ -259,7 +260,9 @@ const AdminPanel = ({ onLogout }: Props) => {
             <div style={{ maxWidth: '640px' }}>
               <div style={cardStyle}>
                 <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Tipografía de títulos</h2>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '28px', fontWeight: 300 }}>Selecciona la fuente para todos los títulos de la página web.</p>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '28px', fontWeight: 300 }}>
+                  Selecciona la fuente para todos los títulos. Los cambios se ven al guardar y recargar la página web.
+                </p>
                 <div style={{ display: 'grid', gap: '10px' }}>
                   {FUENTES_OPCIONES.map(f => {
                     const sel = data.fuenteTitulos === f
@@ -336,9 +339,17 @@ const AdminPanel = ({ onLogout }: Props) => {
           {/* PLANES */}
           {seccion === 'planes' && (
             <div style={{ maxWidth: '720px' }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '24px', fontWeight: 300 }}>
+                Puedes editar, agregar o eliminar planes. Recuerda guardar los cambios.
+              </p>
               {data.planes.map((plan, pi) => (
                 <div key={pi} style={cardStyle}>
-                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '20px' }}>{plan.nombre}</h2>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white' }}>{plan.nombre}</h2>
+                    <button onClick={() => eliminarPlan(pi)} style={{ padding: '6px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', letterSpacing: '1px', fontFamily: 'Inter, sans-serif', transition: 'background-color 0.2s' }}>
+                      Eliminar plan
+                    </button>
+                  </div>
                   <span style={lbl}>NOMBRE</span>
                   <input value={plan.nombre} onChange={e => actualizarPlan(pi, 'nombre', e.target.value)} style={inp} />
                   <span style={lbl}>DESCRIPCIÓN</span>
@@ -356,6 +367,9 @@ const AdminPanel = ({ onLogout }: Props) => {
                   </button>
                 </div>
               ))}
+              <button className="btn-agregar" onClick={agregarPlan} style={{ width: '100%', padding: '16px', backgroundColor: 'transparent', border: '1px solid white', color: 'white', fontSize: '12px', letterSpacing: '3px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, transition: 'all 0.2s', marginTop: '8px' }}>
+                + Agregar nuevo plan
+              </button>
             </div>
           )}
 
