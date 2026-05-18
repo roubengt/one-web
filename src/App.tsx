@@ -52,37 +52,38 @@ const App = () => {
   const [menuAbierto, setMenuAbierto]   = useState(false)
   const [seccionActiva, setSeccionActiva] = useState('inicio')
   const [scrolled, setScrolled]         = useState(false)
+  const [seccionVisible, setSeccionVisible] = useState<Record<string, boolean>>({})
 
-useEffect(() => {
-  if (window.location.pathname === '/admin') {
-    const logged = localStorage.getItem('one_admin_logged') === 'true'
-    setVista(logged ? 'admin' : 'login')
-  }
-  const cargar = async () => {
-    try {
-      const res    = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/config`)
-      const remoto = await res.json()
-      if (remoto && Object.keys(remoto).length > 0) {
-        if (remoto.profesores && typeof remoto.profesores[0] === 'string') {
-          remoto.profesores = remoto.profesores.map((nombre: string) => ({ nombre, foto: '' }))
-        }
-        setWebData({ ...defaultData, ...remoto })
-        return
-      }
-    } catch {}
-    const saved = localStorage.getItem('one_web_data')
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        if (parsed.profesores && typeof parsed.profesores[0] === 'string') {
-          parsed.profesores = parsed.profesores.map((nombre: string) => ({ nombre, foto: '' }))
-        }
-        setWebData({ ...defaultData, ...parsed })
-      } catch {}
+  useEffect(() => {
+    if (window.location.pathname === '/admin') {
+      const logged = localStorage.getItem('one_admin_logged') === 'true'
+      setVista(logged ? 'admin' : 'login')
     }
-  }
-  cargar()
-}, [])
+    const cargar = async () => {
+      try {
+        const res    = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/config`)
+        const remoto = await res.json()
+        if (remoto && Object.keys(remoto).length > 0) {
+          if (remoto.profesores && typeof remoto.profesores[0] === 'string') {
+            remoto.profesores = remoto.profesores.map((nombre: string) => ({ nombre, foto: '' }))
+          }
+          setWebData({ ...defaultData, ...remoto })
+          return
+        }
+      } catch {}
+      const saved = localStorage.getItem('one_web_data')
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          if (parsed.profesores && typeof parsed.profesores[0] === 'string') {
+            parsed.profesores = parsed.profesores.map((nombre: string) => ({ nombre, foto: '' }))
+          }
+          setWebData({ ...defaultData, ...parsed })
+        } catch {}
+      }
+    }
+    cargar()
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -98,6 +99,26 @@ useEffect(() => {
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Intersection Observer para animaciones al entrar en pantalla
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setSeccionVisible(prev => ({ ...prev, [entry.target.id]: true }))
+          }
+        })
+      },
+      { threshold: 0.1 }
+    )
+    const secciones = ['inicio', 'nosotros', 'planes', 'profesores', 'reglamento', 'contacto']
+    secciones.forEach(id => {
+      const el = document.getElementById(id)
+      if (el) observer.observe(el)
+    })
+    return () => observer.disconnect()
   }, [])
 
   const scrollTo = (id: string) => {
@@ -122,10 +143,14 @@ useEffect(() => {
   const B = { fontFamily: "'Inter', sans-serif", fontWeight: 300 as const }
 
   const outline = (size: string, stroke = '2px white'): React.CSSProperties => ({
-    ...T, fontSize: size,
-    color: 'transparent',
-    WebkitTextStroke: stroke,
-    lineHeight: 0.9 as unknown as string,
+    ...T, fontSize: size, color: 'transparent',
+    WebkitTextStroke: stroke, lineHeight: 0.9 as unknown as string,
+  })
+
+  const fadeIn = (id: string, delay = 0): React.CSSProperties => ({
+    opacity: seccionVisible[id] ? 1 : 0,
+    transform: seccionVisible[id] ? 'translateY(0)' : 'translateY(40px)',
+    transition: `opacity 0.8s ease ${delay}s, transform 0.8s ease ${delay}s`,
   })
 
   const fotoDefault = (i: number) => {
@@ -148,27 +173,37 @@ useEffect(() => {
         ::-webkit-scrollbar-track { background: #0a0a0a; }
         ::-webkit-scrollbar-thumb { background: #fff; }
         .plan-card { transition: all 0.3s; }
-        .plan-card:hover { border-color: #fff !important; transform: translateY(-4px); }
-        .prof-card:hover { border-color: #fff !important; }
+        .plan-card:hover { border-color: #fff !important; transform: translateY(-6px) !important; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .prof-card { transition: all 0.3s; }
+        .prof-card:hover { border-color: #fff !important; transform: translateY(-4px); }
+        .prof-card:hover img { filter: grayscale(0%) brightness(0.9) !important; }
+        .nav-btn { transition: all 0.2s; }
         .nav-btn:hover { color: white !important; border-bottom-color: white !important; }
+        .btn-hover { transition: all 0.3s; }
         .btn-hover:hover { background-color: #fff !important; color: #000 !important; }
+        .red-social { transition: all 0.3s; }
+        .red-social:hover { border-color: white !important; background-color: white !important; color: #000 !important; }
         @media (max-width: 900px) { .desktop-nav { display: none !important; } }
-        @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-10px)} }
+        @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-12px)} }
+        @keyframes fadeInDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
       `}</style>
 
       {/* NAVBAR */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
-        backgroundColor: scrolled ? 'rgba(10,10,10,0.97)' : 'transparent',
+        backgroundColor: scrolled ? 'rgba(10,10,10,0.98)' : 'transparent',
         borderBottom: scrolled ? `1px solid ${BORDER}` : 'none',
-        transition: 'all 0.3s', padding: '0 48px',
+        backdropFilter: scrolled ? 'blur(10px)' : 'none',
+        transition: 'all 0.4s ease', padding: '0 48px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         height: '72px',
+        animation: 'fadeInDown 0.6s ease',
       }}>
         <button onClick={() => scrollTo('inicio')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
             <span style={{ ...T, fontSize: '30px', color: 'white', letterSpacing: '1px' }}>ONE</span>
-            <span style={{ ...B, fontSize: '9px', letterSpacing: '5px', color: '#444', marginLeft: '10px' }}>YOUR EVOLUTION</span>
+            <span style={{ ...B, fontSize: '9px', letterSpacing: '5px', color: '#aaa', marginLeft: '10px' }}>YOUR EVOLUTION</span>
           </div>
         </button>
 
@@ -177,9 +212,9 @@ useEffect(() => {
             <button key={link.id} onClick={() => scrollTo(link.id)} className="nav-btn" style={{
               background: 'none', border: 'none', cursor: 'pointer',
               ...B, fontSize: '11px', letterSpacing: '3px', fontWeight: 500,
-              color: seccionActiva === link.id ? 'white' : '#555',
+              color: seccionActiva === link.id ? 'white' : '#aaa',
               borderBottom: seccionActiva === link.id ? '1px solid white' : '1px solid transparent',
-              paddingBottom: '4px', transition: 'all 0.2s',
+              paddingBottom: '4px',
             }}>{link.label}</button>
           ))}
         </div>
@@ -192,6 +227,7 @@ useEffect(() => {
             <span key={i} style={{
               display: 'block', width: '26px', height: '2px', backgroundColor: 'white',
               transition: 'all 0.3s', opacity: menuAbierto && i === 1 ? 0 : 1,
+              transform: menuAbierto ? (i === 0 ? 'rotate(45deg) translate(5px, 5px)' : i === 2 ? 'rotate(-45deg) translate(5px, -5px)' : 'none') : 'none',
             }} />
           ))}
         </button>
@@ -202,18 +238,24 @@ useEffect(() => {
         position: 'fixed', top: 0, right: menuAbierto ? 0 : '-100%',
         width: '300px', height: '100vh', backgroundColor: '#060606',
         borderLeft: `1px solid ${BORDER}`, zIndex: 999,
-        transition: 'right 0.4s ease',
+        transition: 'right 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
         display: 'flex', flexDirection: 'column', justifyContent: 'center',
         padding: '48px',
       }}>
-        <p style={{ ...B, fontSize: '9px', letterSpacing: '4px', color: '#333', marginBottom: '40px' }}>MENÚ</p>
-        {navLinks.map(link => (
+        <p style={{ ...B, fontSize: '9px', letterSpacing: '4px', color: '#666', marginBottom: '40px' }}>MENÚ</p>
+        {navLinks.map((link, i) => (
           <button key={link.id} onClick={() => scrollTo(link.id)} style={{
             background: 'none', border: 'none', cursor: 'pointer',
             ...T, fontSize: '26px',
-            color: seccionActiva === link.id ? 'white' : '#2a2a2a',
-            textAlign: 'left', padding: '8px 0', lineHeight: 1.1, transition: 'color 0.2s',
-          }}>{link.label}</button>
+            color: seccionActiva === link.id ? 'white' : '#444',
+            textAlign: 'left', padding: '8px 0', lineHeight: 1.1,
+            transition: `color 0.2s, transform 0.2s`,
+            transform: menuAbierto ? 'translateX(0)' : 'translateX(20px)',
+            transitionDelay: menuAbierto ? `${i * 0.05}s` : '0s',
+          }}
+            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = 'white'}
+            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = seccionActiva === link.id ? 'white' : '#444'}
+          >{link.label}</button>
         ))}
         <div style={{ marginTop: '48px', display: 'flex', gap: '24px' }}>
           {[
@@ -222,7 +264,9 @@ useEffect(() => {
             { href: 'https://wa.me/56956723743', label: 'WA' },
           ].map(r => (
             <a key={r.href} href={r.href} target="_blank" rel="noreferrer"
-              style={{ ...B, color: '#333', fontSize: '11px', letterSpacing: '2px', fontWeight: 500, textDecoration: 'none' }}
+              style={{ ...B, color: '#aaa', fontSize: '11px', letterSpacing: '2px', fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }}
+              onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.color = 'white'}
+              onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.color = '#aaa'}
             >{r.label}</a>
           ))}
         </div>
@@ -231,44 +275,46 @@ useEffect(() => {
         <div onClick={() => setMenuAbierto(false)} style={{
           position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)',
           zIndex: 998, backdropFilter: 'blur(4px)',
+          transition: 'opacity 0.3s',
         }} />
       )}
 
       {/* INICIO */}
       <section id="inicio" style={{ height: '100vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
         <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80" alt="ONE"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.18)' }} />
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.18)', transform: 'scale(1.05)', transition: 'transform 8s ease' }} />
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '0 24px' }}>
-          <p style={{ ...B, fontSize: '11px', letterSpacing: '8px', color: '#555', marginBottom: '24px' }}>BIENVENIDO A</p>
-          <h1 style={{ ...outline('clamp(100px, 18vw, 220px)'), letterSpacing: '4px', margin: 0 }}>ONE</h1>
-          <p style={{ ...B, fontSize: '11px', letterSpacing: '10px', color: '#333', marginTop: '20px' }}>YOUR EVOLUTION</p>
-          <p style={{ ...B, fontSize: 'clamp(12px, 1.4vw, 16px)', color: '#666', marginTop: '40px', letterSpacing: '3px' }}>{webData.slogan}</p>
+          <p style={{ ...B, fontSize: '11px', letterSpacing: '8px', color: '#bbb', marginBottom: '24px', opacity: seccionVisible['inicio'] ? 1 : 0, transform: seccionVisible['inicio'] ? 'translateY(0)' : 'translateY(20px)', transition: 'all 0.8s ease 0.1s' }}>BIENVENIDO A</p>
+          <h1 style={{ ...outline('clamp(100px, 18vw, 220px)'), letterSpacing: '4px', margin: 0, opacity: seccionVisible['inicio'] ? 1 : 0, transform: seccionVisible['inicio'] ? 'translateY(0)' : 'translateY(30px)', transition: 'all 0.9s ease 0.2s' }}>ONE</h1>
+          <p style={{ ...B, fontSize: '11px', letterSpacing: '10px', color: '#888', marginTop: '20px', opacity: seccionVisible['inicio'] ? 1 : 0, transition: 'all 0.8s ease 0.3s' }}>YOUR EVOLUTION</p>
+          <p style={{ ...B, fontSize: 'clamp(12px, 1.4vw, 16px)', color: '#ccc', marginTop: '40px', letterSpacing: '3px', opacity: seccionVisible['inicio'] ? 1 : 0, transition: 'all 0.8s ease 0.4s' }}>{webData.slogan}</p>
           <button onClick={() => scrollTo('nosotros')} className="btn-hover" style={{
             marginTop: '52px', background: 'none', border: '1px solid white',
             color: 'white', padding: '16px 44px', fontSize: '11px', letterSpacing: '4px',
-            cursor: 'pointer', transition: 'all 0.3s', ...B, fontWeight: 500,
+            cursor: 'pointer', ...B, fontWeight: 500,
+            opacity: seccionVisible['inicio'] ? 1 : 0, transition: 'all 0.8s ease 0.5s',
           }}>DESCUBRE MÁS</button>
         </div>
         <div style={{ position: 'absolute', bottom: '36px', left: '50%', animation: 'bounce 2s infinite' }}>
-          <span style={{ color: '#333', fontSize: '18px' }}>↓</span>
+          <span style={{ color: '#666', fontSize: '18px' }}>↓</span>
         </div>
       </section>
 
       {/* NOSOTROS */}
       <section id="nosotros" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
         <div style={{ display: 'flex', width: '100%', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 50%', minHeight: '60vh', position: 'relative', minWidth: '280px' }}>
+          <div style={{ flex: '1 1 50%', minHeight: '60vh', position: 'relative', minWidth: '280px', overflow: 'hidden' }}>
             <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=900&q=80" alt="Sobre ONE"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.25)' }} />
+              style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.25)', transition: 'transform 0.6s ease', transform: seccionVisible['nosotros'] ? 'scale(1)' : 'scale(1.1)' }} />
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <h2 style={{ ...outline('clamp(60px, 10vw, 130px)', '2px rgba(255,255,255,0.25)'), textAlign: 'center' }}>SOBRE<br />ONE</h2>
+              <h2 style={{ ...outline('clamp(60px, 10vw, 130px)', '2px rgba(255,255,255,0.2)'), textAlign: 'center', ...fadeIn('nosotros', 0.2) }}>SOBRE<br />ONE</h2>
             </div>
           </div>
           <div style={{ flex: '1 1 50%', minWidth: '280px', backgroundColor: BG2, display: 'flex', alignItems: 'center', padding: 'clamp(40px, 6vw, 80px)' }}>
-            <div>
-              <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#444', marginBottom: '32px', fontWeight: 500 }}>QUIÉNES SOMOS</p>
-              <p style={{ ...B, fontSize: 'clamp(14px, 1.6vw, 19px)', lineHeight: 1.9, color: '#ccc', marginBottom: '24px' }}>{webData.sobreOne}</p>
-              <p style={{ ...B, fontSize: 'clamp(13px, 1.3vw, 16px)', lineHeight: 2, color: '#777' }}>{webData.sobreOneFrase}</p>
+            <div style={{ ...fadeIn('nosotros', 0.3) }}>
+              <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#bbb', marginBottom: '32px', fontWeight: 500 }}>QUIÉNES SOMOS</p>
+              <p style={{ ...B, fontSize: 'clamp(14px, 1.6vw, 19px)', lineHeight: 1.9, color: '#e0e0e0', marginBottom: '24px' }}>{webData.sobreOne}</p>
+              <p style={{ ...B, fontSize: 'clamp(13px, 1.3vw, 16px)', lineHeight: 2, color: '#bbb' }}>{webData.sobreOneFrase}</p>
               <div style={{ marginTop: '52px', display: 'flex', gap: '48px', flexWrap: 'wrap' }}>
                 {[
                   { n: String(webData.profesores.length), l: 'COACHES' },
@@ -277,7 +323,7 @@ useEffect(() => {
                 ].map(s => (
                   <div key={s.l}>
                     <div style={{ ...T, fontSize: '52px', color: 'white' }}>{s.n}</div>
-                    <div style={{ ...B, fontSize: '9px', letterSpacing: '3px', color: '#333', fontWeight: 500 }}>{s.l}</div>
+                    <div style={{ ...B, fontSize: '9px', letterSpacing: '3px', color: '#888', fontWeight: 500 }}>{s.l}</div>
                   </div>
                 ))}
               </div>
@@ -288,8 +334,8 @@ useEffect(() => {
 
       {/* PLANES */}
       <section id="planes" style={{ padding: 'clamp(60px, 8vw, 120px) clamp(20px, 5vw, 80px)', backgroundColor: BG }}>
-        <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-          <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#444', marginBottom: '20px', fontWeight: 500 }}>AJUSTADOS A TU MEDIDA</p>
+        <div style={{ textAlign: 'center', marginBottom: '80px', ...fadeIn('planes') }}>
+          <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#bbb', marginBottom: '20px', fontWeight: 500 }}>AJUSTADOS A TU MEDIDA</p>
           <h2 style={{ ...outline('clamp(60px, 12vw, 140px)') }}>PLANES</h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -297,18 +343,16 @@ useEffect(() => {
             <div key={i} className="plan-card" style={{
               backgroundColor: i % 2 === 0 ? CARD : '#111',
               border: `1px solid ${BORDER}`, padding: '40px 32px',
-              transition: 'all 0.3s',
+              opacity: seccionVisible['planes'] ? 1 : 0,
+              transform: seccionVisible['planes'] ? 'translateY(0)' : 'translateY(40px)',
+              transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s, border-color 0.3s, box-shadow 0.3s`,
             }}>
-              <h3 style={{ ...T, fontSize: '36px', color: 'white', marginBottom: '10px', letterSpacing: '1px' }}>{plan.nombre}</h3>
-              <p style={{ ...B, fontSize: '14px', color: '#777', marginBottom: '32px', lineHeight: 1.7, fontWeight: 400 }}>{plan.descripcion}</p>
+              <h3 style={{ ...T, fontSize: '36px', color: 'white', marginBottom: '10px' }}>{plan.nombre}</h3>
+              <p style={{ ...B, fontSize: '14px', color: '#ccc', marginBottom: '32px', lineHeight: 1.7, fontWeight: 400 }}>{plan.descripcion}</p>
               <div style={{ borderTop: `1px solid #1a1a1a`, paddingTop: '24px' }}>
                 {plan.precios.map((p, j) => (
-                  <div key={j} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '14px 0',
-                    borderBottom: j < plan.precios.length - 1 ? `1px solid #1a1a1a` : 'none',
-                  }}>
-                    <span style={{ ...B, fontSize: '13px', color: '#aaa', letterSpacing: '1px', fontWeight: 400 }}>{p.frecuencia}</span>
+                  <div key={j} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: j < plan.precios.length - 1 ? `1px solid #1a1a1a` : 'none' }}>
+                    <span style={{ ...B, fontSize: '13px', color: '#ccc', letterSpacing: '1px', fontWeight: 400 }}>{p.frecuencia}</span>
                     <span style={{ ...T, fontSize: '28px', color: 'white', letterSpacing: '-1px' }}>{p.valor}</span>
                   </div>
                 ))}
@@ -316,9 +360,9 @@ useEffect(() => {
             </div>
           ))}
         </div>
-        <div style={{ textAlign: 'center', marginTop: '64px' }}>
+        <div style={{ textAlign: 'center', marginTop: '64px', ...fadeIn('planes', 0.4) }}>
           <a href="https://wa.me/56956723743" target="_blank" rel="noreferrer" className="btn-hover"
-            style={{ display: 'inline-block', backgroundColor: 'transparent', border: '1px solid white', color: 'white', padding: '18px 52px', fontSize: '11px', letterSpacing: '4px', textDecoration: 'none', transition: 'all 0.3s', ...B, fontWeight: 500 }}>
+            style={{ display: 'inline-block', backgroundColor: 'transparent', border: '1px solid white', color: 'white', padding: '18px 52px', fontSize: '11px', letterSpacing: '4px', textDecoration: 'none', ...B, fontWeight: 500 }}>
             QUIERO SER PARTE DE ONE
           </a>
         </div>
@@ -326,25 +370,29 @@ useEffect(() => {
 
       {/* PROFESORES */}
       <section id="profesores" style={{ padding: 'clamp(60px, 8vw, 120px) clamp(20px, 5vw, 80px)', backgroundColor: BG2 }}>
-        <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-          <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#444', marginBottom: '20px', fontWeight: 500 }}>NUESTRO EQUIPO</p>
+        <div style={{ textAlign: 'center', marginBottom: '80px', ...fadeIn('profesores') }}>
+          <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#bbb', marginBottom: '20px', fontWeight: 500 }}>NUESTRO EQUIPO</p>
           <h2 style={{ ...outline('clamp(60px, 12vw, 140px)') }}>COACHES</h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', maxWidth: '1100px', margin: '0 auto' }}>
           {webData.profesores.map((prof, i) => (
-            <div key={i} className="prof-card" style={{ textAlign: 'center', border: `1px solid ${BORDER}`, transition: 'border-color 0.3s', borderRadius: '2px', overflow: 'hidden' }}>
+            <div key={i} className="prof-card" style={{
+              textAlign: 'center', border: `1px solid ${BORDER}`,
+              borderRadius: '2px', overflow: 'hidden',
+              opacity: seccionVisible['profesores'] ? 1 : 0,
+              transform: seccionVisible['profesores'] ? 'translateY(0)' : 'translateY(40px)',
+              transition: `opacity 0.6s ease ${i * 0.08}s, transform 0.6s ease ${i * 0.08}s, border-color 0.3s`,
+            }}>
               <div style={{ aspectRatio: '1', overflow: 'hidden', backgroundColor: '#0d0d0d' }}>
                 <img
                   src={prof.foto || fotoDefault(i)}
                   alt={prof.nombre}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%) brightness(0.65)', transition: 'filter 0.4s' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLImageElement).style.filter = 'grayscale(0%) brightness(0.85)'}
-                  onMouseLeave={e => (e.currentTarget as HTMLImageElement).style.filter = 'grayscale(100%) brightness(0.65)'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%) brightness(0.65)', transition: 'filter 0.4s ease' }}
                 />
               </div>
               <div style={{ padding: '16px 12px', backgroundColor: CARD }}>
                 <h3 style={{ ...T, fontSize: '20px', color: 'white', margin: '0 0 4px', letterSpacing: '1px' }}>{prof.nombre}</h3>
-                <p style={{ ...B, fontSize: '9px', letterSpacing: '3px', color: '#333', margin: 0, fontWeight: 500 }}>COACH PERSONAL</p>
+                <p style={{ ...B, fontSize: '9px', letterSpacing: '3px', color: '#aaa', margin: 0, fontWeight: 500 }}>COACH PERSONAL</p>
               </div>
             </div>
           ))}
@@ -353,26 +401,32 @@ useEffect(() => {
 
       {/* REGLAMENTO */}
       <section id="reglamento" style={{ padding: 'clamp(60px, 8vw, 120px) clamp(20px, 5vw, 80px)', backgroundColor: BG }}>
-        <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-          <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#444', marginBottom: '20px', fontWeight: 500 }}>NORMAS DE CONVIVENCIA</p>
+        <div style={{ textAlign: 'center', marginBottom: '80px', ...fadeIn('reglamento') }}>
+          <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#bbb', marginBottom: '20px', fontWeight: 500 }}>NORMAS DE CONVIVENCIA</p>
           <h2 style={{ ...outline('clamp(46px, 10vw, 120px)') }}>REGLAMENTO<br />INTERNO</h2>
-          <p style={{ ...B, fontSize: '14px', color: '#444', marginTop: '32px', lineHeight: 1.9, maxWidth: '560px', margin: '32px auto 0', fontWeight: 400 }}>
+          <p style={{ ...B, fontSize: '14px', color: '#bbb', marginTop: '32px', lineHeight: 1.9, maxWidth: '560px', margin: '32px auto 0', fontWeight: 400 }}>
             En ONE buscamos organizarnos mejor y cuidar tu espacio, el que con mucho profesionalismo compartimos en comunidad.
           </p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2px', maxWidth: '1200px', margin: '0 auto' }}>
           {webData.reglamento.map((reg, i) => (
-            <div key={i} style={{ backgroundColor: i % 2 === 0 ? CARD : '#111', padding: '40px 36px', borderTop: `1px solid ${BORDER}` }}>
+            <div key={i} style={{
+              backgroundColor: i % 2 === 0 ? CARD : '#111', padding: '40px 36px',
+              borderTop: `1px solid ${BORDER}`,
+              opacity: seccionVisible['reglamento'] ? 1 : 0,
+              transform: seccionVisible['reglamento'] ? 'translateY(0)' : 'translateY(30px)',
+              transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s`,
+            }}>
               <h3 style={{ ...T, fontSize: '22px', color: 'white', marginBottom: '28px', letterSpacing: '1px' }}>{reg.titulo}</h3>
               <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
                 {reg.items.map((item, j) => (
                   <li key={j} style={{
-                    ...B, fontSize: '13px', color: '#666', lineHeight: 1.9, fontWeight: 400,
+                    ...B, fontSize: '13px', color: '#ccc', lineHeight: 1.9, fontWeight: 400,
                     paddingBottom: '12px', marginBottom: '12px',
                     borderBottom: j < reg.items.length - 1 ? `1px solid #1a1a1a` : 'none',
                     paddingLeft: '16px', position: 'relative',
                   }}>
-                    <span style={{ position: 'absolute', left: 0, color: '#333' }}>—</span>{item}
+                    <span style={{ position: 'absolute', left: 0, color: '#888' }}>—</span>{item}
                   </li>
                 ))}
               </ul>
@@ -386,23 +440,21 @@ useEffect(() => {
         <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80" alt="Contacto"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.1)' }} />
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '60px 24px' }}>
-          <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#444', marginBottom: '24px', fontWeight: 500 }}>ÚNETE A LA COMUNIDAD</p>
-          <h2 style={{ ...outline('clamp(60px, 14vw, 160px)'), margin: '0 0 52px' }}>SÍGUENOS</h2>
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '64px' }}>
+          <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#bbb', marginBottom: '24px', fontWeight: 500, ...fadeIn('contacto') }}>ÚNETE A LA COMUNIDAD</p>
+          <h2 style={{ ...outline('clamp(60px, 14vw, 160px)'), margin: '0 0 52px', ...fadeIn('contacto', 0.2) }}>SÍGUENOS</h2>
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '64px', ...fadeIn('contacto', 0.3) }}>
             {[
               { href: 'https://www.facebook.com/oneevolution.cl/', label: 'FACEBOOK' },
               { href: 'https://www.instagram.com/oneevolution.cl', label: 'INSTAGRAM' },
               { href: 'https://wa.me/56956723743', label: 'WHATSAPP' },
             ].map(r => (
-              <a key={r.href} href={r.href} target="_blank" rel="noreferrer"
-                style={{ display: 'inline-block', border: `1px solid #2a2a2a`, color: 'white', padding: '14px 32px', fontSize: '11px', letterSpacing: '4px', textDecoration: 'none', transition: 'all 0.3s', backgroundColor: 'rgba(0,0,0,0.6)', ...B, fontWeight: 500 }}
-                onMouseEnter={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = 'white'; el.style.backgroundColor = 'white'; el.style.color = '#000' }}
-                onMouseLeave={e => { const el = e.currentTarget as HTMLAnchorElement; el.style.borderColor = '#2a2a2a'; el.style.backgroundColor = 'rgba(0,0,0,0.6)'; el.style.color = 'white' }}
+              <a key={r.href} href={r.href} target="_blank" rel="noreferrer" className="red-social"
+                style={{ display: 'inline-block', border: `1px solid ${BORDER}`, color: 'white', padding: '14px 32px', fontSize: '11px', letterSpacing: '4px', textDecoration: 'none', backgroundColor: 'rgba(0,0,0,0.6)', ...B, fontWeight: 500 }}
               >{r.label}</a>
             ))}
           </div>
-          <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: '48px' }}>
-            <p style={{ ...B, fontSize: '14px', color: '#444', lineHeight: 2.6, fontWeight: 400 }}>
+          <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: '48px', ...fadeIn('contacto', 0.4) }}>
+            <p style={{ ...B, fontSize: '14px', color: '#ccc', lineHeight: 2.6, fontWeight: 400 }}>
               Alto Las Rastras, Talca<br />+56 9 5672 3743<br />contacto@oneevolution.cl
             </p>
           </div>
@@ -413,9 +465,9 @@ useEffect(() => {
       <footer style={{ backgroundColor: '#000', borderTop: `1px solid #0d0d0d`, padding: '32px 48px', textAlign: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px', justifyContent: 'center', marginBottom: '12px' }}>
           <span style={{ ...T, fontSize: '20px', color: 'white' }}>ONE</span>
-          <span style={{ ...B, fontSize: '8px', letterSpacing: '4px', color: '#1a1a1a', marginLeft: '8px' }}>YOUR EVOLUTION</span>
+          <span style={{ ...B, fontSize: '8px', letterSpacing: '4px', color: '#555', marginLeft: '8px' }}>YOUR EVOLUTION</span>
         </div>
-        <p style={{ ...B, fontSize: '11px', color: '#1a1a1a', fontWeight: 400 }}>
+        <p style={{ ...B, fontSize: '11px', color: '#555', fontWeight: 400 }}>
           © 2025 ONE Evolution. Todos los derechos reservados. | www.oneevolution.cl
         </p>
       </footer>
