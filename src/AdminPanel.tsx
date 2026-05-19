@@ -21,6 +21,7 @@ const defaultData = {
   horarioSabado: 'Sábados: 10:00 a 13:00 hrs. (solo recuperativos)',
   fuenteTitulos: 'Impact',
   videoUrl:      '',
+  videoBase64:   '',
   profesores: [
     { nombre: 'Mariana', foto: '' }, { nombre: 'Mario', foto: '' },
     { nombre: 'Nicolás', foto: '' }, { nombre: 'Jorge', foto: '' },
@@ -56,7 +57,9 @@ const AdminPanel = ({ onLogout }: Props) => {
   const [confirmarClave, setConfirmarClave] = useState('')
   const [errorClave, setErrorClave]     = useState('')
   const [exitoClave, setExitoClave]     = useState('')
-  const fileRefs = useRef<(HTMLInputElement | null)[]>([])
+  const [subiendoVideo, setSubiendoVideo] = useState(false)
+  const fileRefs    = useRef<(HTMLInputElement | null)[]>([])
+  const videoRef    = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     const cargar = async () => {
@@ -91,6 +94,21 @@ const AdminPanel = ({ onLogout }: Props) => {
       setGuardado(true)
       setTimeout(() => setGuardado(false), 3000)
     }
+  }
+
+  const subirVideoPC = (file: File) => {
+    if (file.size > 50 * 1024 * 1024) {
+      alert('El video es muy grande. Máximo 50MB. Para videos más grandes usa Google Drive.')
+      return
+    }
+    setSubiendoVideo(true)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string
+      setData({ ...data, videoBase64: base64, videoUrl: '' })
+      setSubiendoVideo(false)
+    }
+    reader.readAsDataURL(file)
   }
 
   const cambiarClave = () => {
@@ -136,40 +154,24 @@ const AdminPanel = ({ onLogout }: Props) => {
   const agregarReglItem    = (ri: number) => { const r = [...data.reglamento]; r[ri].items.push('Nueva regla'); setData({ ...data, reglamento: r }) }
   const eliminarReglItem   = (ri: number, ii: number) => { const r = [...data.reglamento]; r[ri].items = r[ri].items.filter((_, i) => i !== ii); setData({ ...data, reglamento: r }) }
 
-  const inp: React.CSSProperties = {
-    width: '100%', padding: '10px 14px', marginBottom: '16px',
-    backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`,
-    color: 'white', fontSize: '14px', borderRadius: '2px',
-    fontFamily: 'Inter, sans-serif', fontWeight: 300, outline: 'none',
-  }
+  const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', marginBottom: '16px', backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, color: 'white', fontSize: '14px', borderRadius: '2px', fontFamily: 'Inter, sans-serif', fontWeight: 300, outline: 'none' }
   const ta:  React.CSSProperties = { ...inp, minHeight: '80px', resize: 'vertical' }
-  const lbl: React.CSSProperties = {
-    fontSize: '11px', letterSpacing: '2px', color: '#666',
-    display: 'block', marginBottom: '8px',
-    fontFamily: 'Inter, sans-serif', fontWeight: 500,
-  }
+  const lbl: React.CSSProperties = { fontSize: '11px', letterSpacing: '2px', color: '#666', display: 'block', marginBottom: '8px', fontFamily: 'Inter, sans-serif', fontWeight: 500 }
   const secBtn = (s: string): React.CSSProperties => ({
     padding: '12px 20px', border: 'none', cursor: 'pointer', width: '100%',
     textAlign: 'left', fontSize: '12px', letterSpacing: '1px',
     backgroundColor: seccion === s ? '#1a1a1a' : 'transparent',
     color: seccion === s ? 'white' : '#555',
     borderLeft: seccion === s ? '2px solid white' : '2px solid transparent',
-    transition: 'all 0.2s',
-    fontFamily: 'Inter, sans-serif', fontWeight: seccion === s ? 500 : 300,
+    transition: 'all 0.2s', fontFamily: 'Inter, sans-serif', fontWeight: seccion === s ? 500 : 300,
   })
-  const cardStyle: React.CSSProperties = {
-    backgroundColor: CARD, border: `1px solid ${BORDER}`,
-    padding: '28px', borderRadius: '2px', marginBottom: '20px',
-  }
+  const cardStyle: React.CSSProperties = { backgroundColor: CARD, border: `1px solid ${BORDER}`, padding: '28px', borderRadius: '2px', marginBottom: '20px' }
 
   const secciones = [
-    { id: 'general',    label: 'General' },
-    { id: 'tipografia', label: 'Tipografía' },
-    { id: 'planes',     label: 'Planes' },
-    { id: 'profesores', label: 'Profesores' },
-    { id: 'reglamento', label: 'Reglamento' },
-    { id: 'horarios',   label: 'Horarios' },
-    { id: 'cuenta',     label: 'Mi Cuenta' },
+    { id: 'general', label: 'General' }, { id: 'tipografia', label: 'Tipografía' },
+    { id: 'planes', label: 'Planes' }, { id: 'profesores', label: 'Profesores' },
+    { id: 'reglamento', label: 'Reglamento' }, { id: 'horarios', label: 'Horarios' },
+    { id: 'cuenta', label: 'Mi Cuenta' },
   ]
 
   if (cargando) return (
@@ -193,6 +195,7 @@ const AdminPanel = ({ onLogout }: Props) => {
         .btn-eliminar:hover { background-color: #3a1a1a !important; }
         .btn-agregar:hover { border-color: white !important; color: white !important; }
         .upload-btn:hover { border-color: white !important; color: white !important; }
+        .upload-video-btn:hover { border-color: white !important; color: white !important; }
       `}</style>
 
       {/* SIDEBAR */}
@@ -202,12 +205,10 @@ const AdminPanel = ({ onLogout }: Props) => {
           <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', letterSpacing: '3px', color: '#333', marginTop: '6px', fontWeight: 500 }}>ADMIN PANEL</div>
         </div>
         <nav style={{ flex: 1, paddingTop: '16px' }}>
-          {secciones.map(s => (
-            <button key={s.id} onClick={() => setSeccion(s.id)} className="nav-item" style={secBtn(s.id)}>{s.label}</button>
-          ))}
+          {secciones.map(s => <button key={s.id} onClick={() => setSeccion(s.id)} className="nav-item" style={secBtn(s.id)}>{s.label}</button>)}
         </nav>
         <div style={{ padding: '20px 24px', borderTop: `1px solid ${BORDER}` }}>
-          <button onClick={onLogout} style={{ width: '100%', padding: '10px 14px', border: `1px solid ${BORDER}`, backgroundColor: 'transparent', color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 400, transition: 'all 0.2s' }}>
+          <button onClick={onLogout} style={{ width: '100%', padding: '10px 14px', border: `1px solid ${BORDER}`, backgroundColor: 'transparent', color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>
             Cerrar sesión
           </button>
         </div>
@@ -217,23 +218,10 @@ const AdminPanel = ({ onLogout }: Props) => {
       <main style={{ flex: 1, overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '28px 40px', borderBottom: `1px solid ${BORDER}`, backgroundColor: '#0a0a0a', position: 'sticky', top: 0, zIndex: 10 }}>
           <div>
-            <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: '20px', fontWeight: 600, color: 'white' }}>
-              {secciones.find(s => s.id === seccion)?.label}
-            </h1>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#444', marginTop: '4px', fontWeight: 300 }}>
-              Los cambios se aplican al guardar
-            </p>
+            <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: '20px', fontWeight: 600, color: 'white' }}>{secciones.find(s => s.id === seccion)?.label}</h1>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#444', marginTop: '4px', fontWeight: 300 }}>Los cambios se aplican al guardar</p>
           </div>
-          <button onClick={guardar} style={{
-            padding: '12px 28px',
-            backgroundColor: guardado ? 'transparent' : 'white',
-            border: guardado ? '1px solid #4caf50' : 'none',
-            color: guardado ? '#4caf50' : '#000',
-            fontSize: '12px', letterSpacing: '2px',
-            cursor: 'pointer', transition: 'all 0.3s',
-            fontFamily: 'Inter, sans-serif', fontWeight: 600,
-            borderRadius: '2px',
-          }}>
+          <button onClick={guardar} style={{ padding: '12px 28px', backgroundColor: guardado ? 'transparent' : 'white', border: guardado ? '1px solid #4caf50' : 'none', color: guardado ? '#4caf50' : '#000', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', transition: 'all 0.3s', fontFamily: 'Inter, sans-serif', fontWeight: 600, borderRadius: '2px' }}>
             {guardado ? '✓ Guardado' : 'Guardar cambios'}
           </button>
         </div>
@@ -251,21 +239,65 @@ const AdminPanel = ({ onLogout }: Props) => {
                 <textarea value={data.sobreOne} onChange={e => setData({ ...data, sobreOne: e.target.value })} style={ta} />
                 <span style={lbl}>FRASE DESTACADA</span>
                 <textarea value={data.sobreOneFrase} onChange={e => setData({ ...data, sobreOneFrase: e.target.value })} style={{ ...ta, marginBottom: '24px' }} />
-                <span style={lbl}>VIDEO DE INICIO (URL Google Drive)</span>
-                <input
-                  value={data.videoUrl || ''}
-                  onChange={e => setData({ ...data, videoUrl: e.target.value })}
-                  placeholder="https://drive.google.com/file/d/TU_ID/preview"
-                  style={inp}
-                />
-                <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '8px' }}>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#888', lineHeight: 1.8, fontWeight: 300 }}>
-                    <strong style={{ color: '#ccc', fontWeight: 500 }}>Cómo subir el video desde Google Drive:</strong><br />
-                    1. Sube el video a Google Drive<br />
-                    2. Clic derecho → "Obtener enlace" → "Cualquier persona con el enlace"<br />
-                    3. Copia el ID del enlace (la parte entre /d/ y /view)<br />
-                    4. Pega así: https://drive.google.com/file/d/<strong style={{ color: 'white' }}>ID</strong>/preview
+              </div>
+
+              {/* VIDEO */}
+              <div style={cardStyle}>
+                <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Video de inicio</h2>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '24px', fontWeight: 300, lineHeight: 1.7 }}>
+                  El video reemplaza la imagen de fondo en la sección de inicio. Puedes subir uno desde tu computador o usar un enlace de Google Drive.
+                </p>
+
+                {/* Preview del video actual */}
+                {(data.videoBase64 || data.videoUrl) && (
+                  <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '40px', height: '40px', backgroundColor: '#1a1a1a', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="#aaa"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                        <div>
+                          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: 'white', fontWeight: 500 }}>
+                            {data.videoBase64 ? 'Video subido desde PC' : 'Video de Google Drive'}
+                          </p>
+                          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginTop: '2px', fontWeight: 300 }}>
+                            {data.videoBase64 ? 'Guardado localmente' : data.videoUrl}
+                          </p>
+                        </div>
+                      </div>
+                      <button onClick={() => setData({ ...data, videoBase64: '', videoUrl: '' })} style={{ padding: '6px 12px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', fontFamily: 'Inter, sans-serif' }}>
+                        Quitar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Opción 1: subir desde PC */}
+                <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '20px', marginBottom: '16px' }}>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#aaa', fontWeight: 500, marginBottom: '4px', letterSpacing: '1px' }}>OPCIÓN 1 — SUBIR DESDE EL COMPUTADOR</p>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginBottom: '16px', fontWeight: 300 }}>Máximo 50MB. Formatos: MP4, MOV, WEBM.</p>
+                  <input type="file" accept="video/*" ref={videoRef} style={{ display: 'none' }}
+                    onChange={e => { const file = e.target.files?.[0]; if (file) subirVideoPC(file) }} />
+                  <button className="upload-video-btn" onClick={() => videoRef.current?.click()}
+                    disabled={subiendoVideo}
+                    style={{ padding: '10px 24px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: subiendoVideo ? '#555' : '#ccc', fontSize: '12px', letterSpacing: '2px', cursor: subiendoVideo ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, transition: 'all 0.2s' }}>
+                    {subiendoVideo ? 'PROCESANDO...' : '↑ SELECCIONAR VIDEO'}
+                  </button>
+                </div>
+
+                {/* Opción 2: URL Drive */}
+                <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '20px' }}>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#aaa', fontWeight: 500, marginBottom: '4px', letterSpacing: '1px' }}>OPCIÓN 2 — URL DE GOOGLE DRIVE</p>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginBottom: '16px', fontWeight: 300, lineHeight: 1.7 }}>
+                    Ideal para videos mayores a 50MB.<br />
+                    Formato: https://drive.google.com/file/d/<strong style={{ color: '#888' }}>ID</strong>/preview
                   </p>
+                  <input
+                    value={data.videoUrl || ''}
+                    onChange={e => setData({ ...data, videoUrl: e.target.value, videoBase64: '' })}
+                    placeholder="https://drive.google.com/file/d/TU_ID/preview"
+                    style={{ ...inp, marginBottom: 0 }}
+                  />
                 </div>
               </div>
             </div>
@@ -276,24 +308,14 @@ const AdminPanel = ({ onLogout }: Props) => {
             <div style={{ maxWidth: '640px' }}>
               <div style={cardStyle}>
                 <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Tipografía de títulos</h2>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '28px', fontWeight: 300 }}>
-                  Selecciona la fuente para todos los títulos. Los cambios se ven al guardar y recargar la página web.
-                </p>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '28px', fontWeight: 300 }}>Selecciona la fuente para todos los títulos. Los cambios se ven al guardar y recargar la página web.</p>
                 <div style={{ display: 'grid', gap: '10px' }}>
                   {FUENTES_OPCIONES.map(f => {
                     const sel = data.fuenteTitulos === f
                     return (
-                      <button key={f} onClick={() => setData({ ...data, fuenteTitulos: f })} style={{
-                        padding: '18px 24px', backgroundColor: sel ? '#1a1a1a' : 'transparent',
-                        border: sel ? '1px solid white' : `1px solid ${BORDER}`,
-                        cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        borderRadius: '2px',
-                      }}>
+                      <button key={f} onClick={() => setData({ ...data, fuenteTitulos: f })} style={{ padding: '18px 24px', backgroundColor: sel ? '#1a1a1a' : 'transparent', border: sel ? '1px solid white' : `1px solid ${BORDER}`, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '2px' }}>
                         <span style={{ fontFamily: FUENTES_MAP[f], fontSize: '26px', color: 'white', fontWeight: 900 }}>ONE YOUR EVOLUTION</span>
-                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', letterSpacing: '2px', color: sel ? 'white' : '#444', fontWeight: 500 }}>
-                          {sel ? '✓ ACTIVA' : f.toUpperCase()}
-                        </span>
+                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', letterSpacing: '2px', color: sel ? 'white' : '#444', fontWeight: 500 }}>{sel ? '✓ ACTIVA' : f.toUpperCase()}</span>
                       </button>
                     )
                   })}
@@ -307,47 +329,27 @@ const AdminPanel = ({ onLogout }: Props) => {
             <div style={{ maxWidth: '680px' }}>
               <div style={cardStyle}>
                 <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Coaches</h2>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '28px', fontWeight: 300, lineHeight: 1.6 }}>
-                  Agrega el nombre y foto de cada coach. Puedes subir una imagen directamente desde tu computador.
-                </p>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '28px', fontWeight: 300, lineHeight: 1.6 }}>Agrega el nombre y foto de cada coach. Puedes subir una imagen directamente desde tu computador.</p>
                 {data.profesores.map((prof, i) => (
                   <div key={i} style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '20px', marginBottom: '12px' }}>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                       <div style={{ flexShrink: 0 }}>
                         <div style={{ width: '80px', height: '80px', backgroundColor: '#1a1a1a', border: `1px solid ${BORDER}`, borderRadius: '2px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
-                          {prof.foto ? (
-                            <img src={prof.foto} alt={prof.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <span style={{ fontFamily: 'Impact, sans-serif', fontSize: '28px', color: '#222' }}>
-                              {prof.nombre ? prof.nombre.charAt(0).toUpperCase() : '?'}
-                            </span>
-                          )}
+                          {prof.foto ? <img src={prof.foto} alt={prof.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontFamily: 'Impact, sans-serif', fontSize: '28px', color: '#222' }}>{prof.nombre ? prof.nombre.charAt(0).toUpperCase() : '?'}</span>}
                         </div>
-                        <input type="file" accept="image/*"
-                          ref={el => { fileRefs.current[i] = el }}
-                          style={{ display: 'none' }}
-                          onChange={e => { const file = e.target.files?.[0]; if (file) subirFoto(i, file) }}
-                        />
-                        <button className="upload-btn" onClick={() => fileRefs.current[i]?.click()} style={{ width: '80px', padding: '6px 0', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '10px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, transition: 'all 0.2s' }}>
-                          {prof.foto ? 'CAMBIAR' : 'SUBIR'}
-                        </button>
-                        {prof.foto && (
-                          <button onClick={() => actualizarProfesor(i, 'foto', '')} style={{ width: '80px', padding: '6px 0', marginTop: '4px', backgroundColor: 'transparent', border: '1px solid #2a1a1a', color: '#ff6b6b', fontSize: '10px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, display: 'block' }}>
-                            QUITAR
-                          </button>
-                        )}
+                        <input type="file" accept="image/*" ref={el => { fileRefs.current[i] = el }} style={{ display: 'none' }} onChange={e => { const file = e.target.files?.[0]; if (file) subirFoto(i, file) }} />
+                        <button className="upload-btn" onClick={() => fileRefs.current[i]?.click()} style={{ width: '80px', padding: '6px 0', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '10px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, transition: 'all 0.2s' }}>{prof.foto ? 'CAMBIAR' : 'SUBIR'}</button>
+                        {prof.foto && <button onClick={() => actualizarProfesor(i, 'foto', '')} style={{ width: '80px', padding: '6px 0', marginTop: '4px', backgroundColor: 'transparent', border: '1px solid #2a1a1a', color: '#ff6b6b', fontSize: '10px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, display: 'block' }}>QUITAR</button>}
                       </div>
                       <div style={{ flex: 1 }}>
                         <span style={lbl}>NOMBRE</span>
                         <input value={prof.nombre} onChange={e => actualizarProfesor(i, 'nombre', e.target.value)} style={{ ...inp, marginBottom: 0 }} />
                       </div>
-                      <button className="btn-eliminar" onClick={() => eliminarProfesor(i)} style={{ padding: '8px 12px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0, transition: 'background-color 0.2s' }}>✕</button>
+                      <button className="btn-eliminar" onClick={() => eliminarProfesor(i)} style={{ padding: '8px 12px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0 }}>✕</button>
                     </div>
                   </div>
                 ))}
-                <button className="btn-agregar" onClick={agregarProfesor} style={{ width: '100%', padding: '14px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', marginTop: '8px', transition: 'all 0.2s', fontFamily: 'Inter, sans-serif', fontWeight: 500 }}>
-                  + Agregar Coach
-                </button>
+                <button className="btn-agregar" onClick={agregarProfesor} style={{ width: '100%', padding: '14px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', marginTop: '8px', transition: 'all 0.2s', fontFamily: 'Inter, sans-serif', fontWeight: 500 }}>+ Agregar Coach</button>
               </div>
             </div>
           )}
@@ -355,16 +357,12 @@ const AdminPanel = ({ onLogout }: Props) => {
           {/* PLANES */}
           {seccion === 'planes' && (
             <div style={{ maxWidth: '720px' }}>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '24px', fontWeight: 300 }}>
-                Puedes editar, agregar o eliminar planes. Recuerda guardar los cambios.
-              </p>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '24px', fontWeight: 300 }}>Puedes editar, agregar o eliminar planes. Recuerda guardar los cambios.</p>
               {data.planes.map((plan, pi) => (
                 <div key={pi} style={cardStyle}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white' }}>{plan.nombre}</h2>
-                    <button onClick={() => eliminarPlan(pi)} style={{ padding: '6px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', letterSpacing: '1px', fontFamily: 'Inter, sans-serif', transition: 'background-color 0.2s' }}>
-                      Eliminar plan
-                    </button>
+                    <button onClick={() => eliminarPlan(pi)} style={{ padding: '6px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', letterSpacing: '1px', fontFamily: 'Inter, sans-serif' }}>Eliminar plan</button>
                   </div>
                   <span style={lbl}>NOMBRE</span>
                   <input value={plan.nombre} onChange={e => actualizarPlan(pi, 'nombre', e.target.value)} style={inp} />
@@ -373,19 +371,15 @@ const AdminPanel = ({ onLogout }: Props) => {
                   <span style={lbl}>PRECIOS</span>
                   {plan.precios.map((p, ji) => (
                     <div key={ji} style={{ display: 'flex', gap: '12px', marginBottom: '10px', alignItems: 'center' }}>
-                      <input value={p.frecuencia} onChange={e => actualizarPrecio(pi, ji, 'frecuencia', e.target.value)} style={{ ...inp, flex: 2, marginBottom: 0 }} placeholder="Frecuencia" />
-                      <input value={p.valor} onChange={e => actualizarPrecio(pi, ji, 'valor', e.target.value)} style={{ ...inp, flex: 1, marginBottom: 0 }} placeholder="$0" />
+                      <input value={p.frecuencia} onChange={e => actualizarPrecio(pi, ji, 'frecuencia', e.target.value)} style={{ ...inp, flex: 2, marginBottom: 0 }} />
+                      <input value={p.valor} onChange={e => actualizarPrecio(pi, ji, 'valor', e.target.value)} style={{ ...inp, flex: 1, marginBottom: 0 }} />
                       <button className="btn-eliminar" onClick={() => eliminarPrecio(pi, ji)} style={{ padding: '10px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0 }}>✕</button>
                     </div>
                   ))}
-                  <button className="btn-agregar" onClick={() => agregarPrecio(pi)} style={{ padding: '8px 20px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', marginTop: '8px', fontFamily: 'Inter, sans-serif' }}>
-                    + Agregar precio
-                  </button>
+                  <button className="btn-agregar" onClick={() => agregarPrecio(pi)} style={{ padding: '8px 20px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', marginTop: '8px', fontFamily: 'Inter, sans-serif' }}>+ Agregar precio</button>
                 </div>
               ))}
-              <button className="btn-agregar" onClick={agregarPlan} style={{ width: '100%', padding: '16px', backgroundColor: 'transparent', border: '1px solid white', color: 'white', fontSize: '12px', letterSpacing: '3px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, transition: 'all 0.2s', marginTop: '8px' }}>
-                + Agregar nuevo plan
-              </button>
+              <button className="btn-agregar" onClick={agregarPlan} style={{ width: '100%', padding: '16px', backgroundColor: 'transparent', border: '1px solid white', color: 'white', fontSize: '12px', letterSpacing: '3px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, transition: 'all 0.2s', marginTop: '8px' }}>+ Agregar nuevo plan</button>
             </div>
           )}
 
@@ -404,9 +398,7 @@ const AdminPanel = ({ onLogout }: Props) => {
                       <button className="btn-eliminar" onClick={() => eliminarReglItem(ri, ii)} style={{ padding: '10px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0, marginTop: '2px' }}>✕</button>
                     </div>
                   ))}
-                  <button className="btn-agregar" onClick={() => agregarReglItem(ri)} style={{ padding: '8px 20px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', marginTop: '8px', fontFamily: 'Inter, sans-serif' }}>
-                    + Agregar regla
-                  </button>
+                  <button className="btn-agregar" onClick={() => agregarReglItem(ri)} style={{ padding: '8px 20px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', marginTop: '8px', fontFamily: 'Inter, sans-serif' }}>+ Agregar regla</button>
                 </div>
               ))}
             </div>
@@ -431,23 +423,13 @@ const AdminPanel = ({ onLogout }: Props) => {
               <div style={cardStyle}>
                 <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Cambiar contraseña</h2>
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '24px', fontWeight: 300 }}>Actualiza la contraseña de acceso al panel de administración.</p>
-                {errorClave && (
-                  <div style={{ backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', padding: '10px 14px', marginBottom: '16px', borderRadius: '2px' }}>
-                    <p style={{ fontFamily: 'Inter, sans-serif', color: '#ff6b6b', fontSize: '13px', fontWeight: 400 }}>{errorClave}</p>
-                  </div>
-                )}
-                {exitoClave && (
-                  <div style={{ backgroundColor: '#0a1a0a', border: '1px solid #4caf50', padding: '10px 14px', marginBottom: '16px', borderRadius: '2px' }}>
-                    <p style={{ fontFamily: 'Inter, sans-serif', color: '#4caf50', fontSize: '13px', fontWeight: 400 }}>{exitoClave}</p>
-                  </div>
-                )}
+                {errorClave && <div style={{ backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', padding: '10px 14px', marginBottom: '16px', borderRadius: '2px' }}><p style={{ fontFamily: 'Inter, sans-serif', color: '#ff6b6b', fontSize: '13px', fontWeight: 400 }}>{errorClave}</p></div>}
+                {exitoClave && <div style={{ backgroundColor: '#0a1a0a', border: '1px solid #4caf50', padding: '10px 14px', marginBottom: '16px', borderRadius: '2px' }}><p style={{ fontFamily: 'Inter, sans-serif', color: '#4caf50', fontSize: '13px', fontWeight: 400 }}>{exitoClave}</p></div>}
                 <span style={lbl}>NUEVA CONTRASEÑA</span>
                 <input type="password" value={nuevaClave} onChange={e => setNuevaClave(e.target.value)} placeholder="Mínimo 6 caracteres" style={inp} />
                 <span style={lbl}>CONFIRMAR CONTRASEÑA</span>
                 <input type="password" value={confirmarClave} onChange={e => setConfirmarClave(e.target.value)} placeholder="Repite la contraseña" style={{ ...inp, marginBottom: '20px' }} />
-                <button onClick={cambiarClave} style={{ width: '100%', padding: '14px', backgroundColor: 'white', border: 'none', color: '#000', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
-                  Actualizar contraseña
-                </button>
+                <button onClick={cambiarClave} style={{ width: '100%', padding: '14px', backgroundColor: 'white', border: 'none', color: '#000', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>Actualizar contraseña</button>
               </div>
             </div>
           )}
