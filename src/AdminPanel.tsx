@@ -20,6 +20,7 @@ const defaultData = {
   horarioSemana: 'Lunes a Viernes: 6:30 a 21:00 hrs.',
   horarioSabado: 'Sábados: 10:00 a 13:00 hrs. (solo recuperativos)',
   fuenteTitulos: 'Impact',
+  videoUrl:      '',
   profesores: [
     { nombre: 'Mariana', foto: '' }, { nombre: 'Mario', foto: '' },
     { nombre: 'Nicolás', foto: '' }, { nombre: 'Jorge', foto: '' },
@@ -214,7 +215,6 @@ const AdminPanel = ({ onLogout }: Props) => {
 
       {/* MAIN */}
       <main style={{ flex: 1, overflowY: 'auto' }}>
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '28px 40px', borderBottom: `1px solid ${BORDER}`, backgroundColor: '#0a0a0a', position: 'sticky', top: 0, zIndex: 10 }}>
           <div>
             <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: '20px', fontWeight: 600, color: 'white' }}>
@@ -250,7 +250,23 @@ const AdminPanel = ({ onLogout }: Props) => {
                 <span style={lbl}>DESCRIPCIÓN — QUIÉNES SOMOS</span>
                 <textarea value={data.sobreOne} onChange={e => setData({ ...data, sobreOne: e.target.value })} style={ta} />
                 <span style={lbl}>FRASE DESTACADA</span>
-                <textarea value={data.sobreOneFrase} onChange={e => setData({ ...data, sobreOneFrase: e.target.value })} style={{ ...ta, marginBottom: 0 }} />
+                <textarea value={data.sobreOneFrase} onChange={e => setData({ ...data, sobreOneFrase: e.target.value })} style={{ ...ta, marginBottom: '24px' }} />
+                <span style={lbl}>VIDEO DE INICIO (URL Google Drive)</span>
+                <input
+                  value={data.videoUrl || ''}
+                  onChange={e => setData({ ...data, videoUrl: e.target.value })}
+                  placeholder="https://drive.google.com/file/d/TU_ID/preview"
+                  style={inp}
+                />
+                <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '8px' }}>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#888', lineHeight: 1.8, fontWeight: 300 }}>
+                    <strong style={{ color: '#ccc', fontWeight: 500 }}>Cómo subir el video desde Google Drive:</strong><br />
+                    1. Sube el video a Google Drive<br />
+                    2. Clic derecho → "Obtener enlace" → "Cualquier persona con el enlace"<br />
+                    3. Copia el ID del enlace (la parte entre /d/ y /view)<br />
+                    4. Pega así: https://drive.google.com/file/d/<strong style={{ color: 'white' }}>ID</strong>/preview
+                  </p>
+                </div>
               </div>
             </div>
           )}

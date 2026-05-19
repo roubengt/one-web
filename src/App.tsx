@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import AdminLogin from './AdminLogin'
 import AdminPanel from './AdminPanel'
 
@@ -22,6 +22,7 @@ const defaultData = {
   horarioSemana:  'Lunes a Viernes: 6:30 a 21:00 hrs.',
   horarioSabado:  'Sábados: 10:00 a 13:00 hrs. (solo recuperativos)',
   fuenteTitulos:  'Impact',
+  videoUrl:       '',
   profesores: [
     { nombre: 'Mariana', foto: '' }, { nombre: 'Mario', foto: '' },
     { nombre: 'Nicolás', foto: '' }, { nombre: 'Jorge', foto: '' },
@@ -53,6 +54,7 @@ const App = () => {
   const [seccionActiva, setSeccionActiva] = useState('inicio')
   const [scrolled, setScrolled]         = useState(false)
   const [seccionVisible, setSeccionVisible] = useState<Record<string, boolean>>({})
+  const observerRef = useRef<IntersectionObserver | null>(null)
 
   useEffect(() => {
     if (window.location.pathname === '/admin') {
@@ -87,7 +89,7 @@ const App = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
+      setScrolled(window.scrollY > 80)
       const secciones = ['inicio', 'nosotros', 'planes', 'profesores', 'reglamento', 'contacto']
       for (const id of secciones) {
         const el = document.getElementById(id)
@@ -101,14 +103,12 @@ const App = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Intersection Observer para animaciones al entrar en pantalla
   useEffect(() => {
-    const observer = new IntersectionObserver(
+    if (observerRef.current) observerRef.current.disconnect()
+    observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            setSeccionVisible(prev => ({ ...prev, [entry.target.id]: true }))
-          }
+          setSeccionVisible(prev => ({ ...prev, [entry.target.id]: entry.isIntersecting }))
         })
       },
       { threshold: 0.1 }
@@ -116,9 +116,9 @@ const App = () => {
     const secciones = ['inicio', 'nosotros', 'planes', 'profesores', 'reglamento', 'contacto']
     secciones.forEach(id => {
       const el = document.getElementById(id)
-      if (el) observer.observe(el)
+      if (el) observerRef.current?.observe(el)
     })
-    return () => observer.disconnect()
+    return () => observerRef.current?.disconnect()
   }, [])
 
   const scrollTo = (id: string) => {
@@ -183,62 +183,71 @@ const App = () => {
         .btn-hover:hover { background-color: #fff !important; color: #000 !important; }
         .red-social { transition: all 0.3s; }
         .red-social:hover { border-color: white !important; background-color: white !important; color: #000 !important; }
+        .menu-btn:hover { opacity: 0.7; }
         @media (max-width: 900px) { .desktop-nav { display: none !important; } }
         @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-12px)} }
-        @keyframes fadeInDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
       `}</style>
 
       {/* NAVBAR */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
-        backgroundColor: scrolled ? 'rgba(10,10,10,0.98)' : 'transparent',
+        backgroundColor: scrolled ? 'rgba(10,10,10,0.95)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
         borderBottom: scrolled ? `1px solid ${BORDER}` : 'none',
-        backdropFilter: scrolled ? 'blur(10px)' : 'none',
-        transition: 'all 0.4s ease', padding: '0 48px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        transition: 'all 0.4s ease',
+        padding: '0 32px',
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
+        alignItems: 'center',
         height: '72px',
-        animation: 'fadeInDown 0.6s ease',
       }}>
-        <button onClick={() => scrollTo('inicio')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-            <span style={{ ...T, fontSize: '30px', color: 'white', letterSpacing: '1px' }}>ONE</span>
-            <span style={{ ...B, fontSize: '9px', letterSpacing: '5px', color: '#aaa', marginLeft: '10px' }}>YOUR EVOLUTION</span>
-          </div>
+        {/* IZQUIERDA — hamburguesa */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <button className="menu-btn" onClick={() => setMenuAbierto(!menuAbierto)} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', gap: '5px', padding: '4px',
+            transition: 'opacity 0.2s',
+          }}>
+            {[0, 1, 2].map(i => (
+              <span key={i} style={{
+                display: 'block', width: '26px', height: '2px', backgroundColor: 'white',
+                transition: 'all 0.3s ease',
+                opacity: menuAbierto && i === 1 ? 0 : 1,
+                transform: menuAbierto
+                  ? i === 0 ? 'rotate(45deg) translate(5px, 5px)'
+                  : i === 2 ? 'rotate(-45deg) translate(5px, -5px)'
+                  : 'none'
+                  : 'none',
+              }} />
+            ))}
+          </button>
+        </div>
+
+        {/* CENTRO — logo */}
+        <button onClick={() => scrollTo('inicio')} style={{ background: 'none', border: 'none', cursor: 'pointer', justifySelf: 'center' }}>
+          <span style={{ ...T, fontSize: '26px', color: 'white', letterSpacing: '4px' }}>ONE</span>
         </button>
 
-        <div className="desktop-nav" style={{ display: 'flex', gap: '36px' }}>
-          {navLinks.map(link => (
+        {/* DERECHA — nav links */}
+        <div className="desktop-nav" style={{ display: 'flex', gap: '24px', justifyContent: 'flex-end' }}>
+          {navLinks.slice(1).map(link => (
             <button key={link.id} onClick={() => scrollTo(link.id)} className="nav-btn" style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              ...B, fontSize: '11px', letterSpacing: '3px', fontWeight: 500,
+              ...B, fontSize: '10px', letterSpacing: '2px', fontWeight: 500,
               color: seccionActiva === link.id ? 'white' : '#aaa',
               borderBottom: seccionActiva === link.id ? '1px solid white' : '1px solid transparent',
               paddingBottom: '4px',
             }}>{link.label}</button>
           ))}
         </div>
-
-        <button onClick={() => setMenuAbierto(!menuAbierto)} style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          display: 'flex', flexDirection: 'column', gap: '5px', padding: '4px',
-        }}>
-          {[0, 1, 2].map(i => (
-            <span key={i} style={{
-              display: 'block', width: '26px', height: '2px', backgroundColor: 'white',
-              transition: 'all 0.3s', opacity: menuAbierto && i === 1 ? 0 : 1,
-              transform: menuAbierto ? (i === 0 ? 'rotate(45deg) translate(5px, 5px)' : i === 2 ? 'rotate(-45deg) translate(5px, -5px)' : 'none') : 'none',
-            }} />
-          ))}
-        </button>
       </nav>
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR — sale desde la izquierda */}
       <div style={{
-        position: 'fixed', top: 0, right: menuAbierto ? 0 : '-100%',
+        position: 'fixed', top: 0, left: menuAbierto ? 0 : '-100%',
         width: '300px', height: '100vh', backgroundColor: '#060606',
-        borderLeft: `1px solid ${BORDER}`, zIndex: 999,
-        transition: 'right 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        borderRight: `1px solid ${BORDER}`, zIndex: 999,
+        transition: 'left 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
         display: 'flex', flexDirection: 'column', justifyContent: 'center',
         padding: '48px',
       }}>
@@ -249,9 +258,9 @@ const App = () => {
             ...T, fontSize: '26px',
             color: seccionActiva === link.id ? 'white' : '#444',
             textAlign: 'left', padding: '8px 0', lineHeight: 1.1,
-            transition: `color 0.2s, transform 0.2s`,
-            transform: menuAbierto ? 'translateX(0)' : 'translateX(20px)',
-            transitionDelay: menuAbierto ? `${i * 0.05}s` : '0s',
+            transition: `color 0.2s, transform 0.3s ease ${i * 0.05}s, opacity 0.3s ease ${i * 0.05}s`,
+            transform: menuAbierto ? 'translateX(0)' : 'translateX(-20px)',
+            opacity: menuAbierto ? 1 : 0,
           }}
             onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = 'white'}
             onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = seccionActiva === link.id ? 'white' : '#444'}
@@ -275,28 +284,41 @@ const App = () => {
         <div onClick={() => setMenuAbierto(false)} style={{
           position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)',
           zIndex: 998, backdropFilter: 'blur(4px)',
-          transition: 'opacity 0.3s',
         }} />
       )}
 
-      {/* INICIO */}
-      <section id="inicio" style={{ height: '100vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-        <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80" alt="ONE"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.18)', transform: 'scale(1.05)', transition: 'transform 8s ease' }} />
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '0 24px' }}>
-          <p style={{ ...B, fontSize: '11px', letterSpacing: '8px', color: '#bbb', marginBottom: '24px', opacity: seccionVisible['inicio'] ? 1 : 0, transform: seccionVisible['inicio'] ? 'translateY(0)' : 'translateY(20px)', transition: 'all 0.8s ease 0.1s' }}>BIENVENIDO A</p>
-          <h1 style={{ ...outline('clamp(100px, 18vw, 220px)'), letterSpacing: '4px', margin: 0, opacity: seccionVisible['inicio'] ? 1 : 0, transform: seccionVisible['inicio'] ? 'translateY(0)' : 'translateY(30px)', transition: 'all 0.9s ease 0.2s' }}>ONE</h1>
-          <p style={{ ...B, fontSize: '11px', letterSpacing: '10px', color: '#888', marginTop: '20px', opacity: seccionVisible['inicio'] ? 1 : 0, transition: 'all 0.8s ease 0.3s' }}>YOUR EVOLUTION</p>
-          <p style={{ ...B, fontSize: 'clamp(12px, 1.4vw, 16px)', color: '#ccc', marginTop: '40px', letterSpacing: '3px', opacity: seccionVisible['inicio'] ? 1 : 0, transition: 'all 0.8s ease 0.4s' }}>{webData.slogan}</p>
-          <button onClick={() => scrollTo('nosotros')} className="btn-hover" style={{
-            marginTop: '52px', background: 'none', border: '1px solid white',
-            color: 'white', padding: '16px 44px', fontSize: '11px', letterSpacing: '4px',
-            cursor: 'pointer', ...B, fontWeight: 500,
-            opacity: seccionVisible['inicio'] ? 1 : 0, transition: 'all 0.8s ease 0.5s',
-          }}>DESCUBRE MÁS</button>
-        </div>
-        <div style={{ position: 'absolute', bottom: '36px', left: '50%', animation: 'bounce 2s infinite' }}>
-          <span style={{ color: '#666', fontSize: '18px' }}>↓</span>
+      {/* INICIO — video o imagen */}
+      <section id="inicio" style={{ height: '100vh', position: 'relative', overflow: 'hidden', backgroundColor: '#000' }}>
+        {(webData as any).videoUrl ? (
+          <>
+            <iframe
+              src={(webData as any).videoUrl}
+              style={{
+                position: 'absolute',
+                top: '50%', left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '177.78vh',
+                height: '100vh',
+                minWidth: '100%',
+                minHeight: '56.25vw',
+                border: 'none',
+                pointerEvents: 'none',
+              }}
+              allow="autoplay; fullscreen"
+              title="ONE Your Evolution"
+            />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.7) 100%)',
+              zIndex: 1,
+            }} />
+          </>
+        ) : (
+          <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80" alt="ONE"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.18)' }} />
+        )}
+        <div style={{ position: 'absolute', bottom: '36px', left: '50%', animation: 'bounce 2s infinite', zIndex: 2 }}>
+          <span style={{ color: '#888', fontSize: '18px' }}>↓</span>
         </div>
       </section>
 
@@ -305,7 +327,7 @@ const App = () => {
         <div style={{ display: 'flex', width: '100%', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 50%', minHeight: '60vh', position: 'relative', minWidth: '280px', overflow: 'hidden' }}>
             <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=900&q=80" alt="Sobre ONE"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.25)', transition: 'transform 0.6s ease', transform: seccionVisible['nosotros'] ? 'scale(1)' : 'scale(1.1)' }} />
+              style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.25)', transition: 'transform 0.8s ease', transform: seccionVisible['nosotros'] ? 'scale(1)' : 'scale(1.08)' }} />
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <h2 style={{ ...outline('clamp(60px, 10vw, 130px)', '2px rgba(255,255,255,0.2)'), textAlign: 'center', ...fadeIn('nosotros', 0.2) }}>SOBRE<br />ONE</h2>
             </div>
@@ -384,11 +406,8 @@ const App = () => {
               transition: `opacity 0.6s ease ${i * 0.08}s, transform 0.6s ease ${i * 0.08}s, border-color 0.3s`,
             }}>
               <div style={{ aspectRatio: '1', overflow: 'hidden', backgroundColor: '#0d0d0d' }}>
-                <img
-                  src={prof.foto || fotoDefault(i)}
-                  alt={prof.nombre}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%) brightness(0.65)', transition: 'filter 0.4s ease' }}
-                />
+                <img src={prof.foto || fotoDefault(i)} alt={prof.nombre}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(100%) brightness(0.65)', transition: 'filter 0.4s ease' }} />
               </div>
               <div style={{ padding: '16px 12px', backgroundColor: CARD }}>
                 <h3 style={{ ...T, fontSize: '20px', color: 'white', margin: '0 0 4px', letterSpacing: '1px' }}>{prof.nombre}</h3>
