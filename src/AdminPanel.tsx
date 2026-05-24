@@ -22,12 +22,7 @@ const defaultData = {
   fuenteTitulos: 'Impact',
   videoUrl:      '',
   videoBase64:   '',
-  profesores: [
-    { nombre: 'Mariana', foto: '' }, { nombre: 'Mario', foto: '' },
-    { nombre: 'Nicolás', foto: '' }, { nombre: 'Jorge', foto: '' },
-    { nombre: 'Ignacio', foto: '' }, { nombre: 'Seba', foto: '' },
-    { nombre: 'Benja', foto: '' },
-  ],
+  profesores:    [] as { nombre: string; foto: string; descripcion: string }[],
   planes: [
     { nombre: 'PLAN PERSONAL', descripcion: 'Sesiones uno a uno con tu Coach', precios: [{ frecuencia: '2 veces x semana', valor: '$230.000' }, { frecuencia: '3 veces x semana', valor: '$260.000' }, { frecuencia: '4 veces x semana', valor: '$290.000' }] },
     { nombre: 'PLAN DÚO', descripcion: 'Entrenan juntos con un mismo Coach. (Valor por persona)', precios: [{ frecuencia: '2 veces x semana', valor: '$295.000' }, { frecuencia: '3 veces x semana', valor: '$340.000' }, { frecuencia: '4 veces x semana', valor: '$380.000' }, { frecuencia: '5 veces x semana', valor: '$430.000' }] },
@@ -49,17 +44,18 @@ const defaultData = {
 interface Props { onLogout: () => void }
 
 const AdminPanel = ({ onLogout }: Props) => {
-  const [seccion, setSeccion]           = useState('general')
-  const [data, setData]                 = useState(defaultData)
-  const [guardado, setGuardado]         = useState(false)
-  const [cargando, setCargando]         = useState(true)
-  const [nuevaClave, setNuevaClave]     = useState('')
+  const [seccion, setSeccion]             = useState('general')
+  const [data, setData]                   = useState(defaultData)
+  const [guardado, setGuardado]           = useState(false)
+  const [cargando, setCargando]           = useState(true)
+  const [sidebarAbierto, setSidebarAbierto] = useState(false)
+  const [nuevaClave, setNuevaClave]       = useState('')
   const [confirmarClave, setConfirmarClave] = useState('')
-  const [errorClave, setErrorClave]     = useState('')
-  const [exitoClave, setExitoClave]     = useState('')
+  const [errorClave, setErrorClave]       = useState('')
+  const [exitoClave, setExitoClave]       = useState('')
   const [subiendoVideo, setSubiendoVideo] = useState(false)
-  const fileRefs    = useRef<(HTMLInputElement | null)[]>([])
-  const videoRef    = useRef<HTMLInputElement | null>(null)
+  const fileRefs = useRef<(HTMLInputElement | null)[]>([])
+  const videoRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     const cargar = async () => {
@@ -67,7 +63,14 @@ const AdminPanel = ({ onLogout }: Props) => {
       const remoto = await obtenerConfig()
       if (remoto && Object.keys(remoto).length > 0) {
         if (remoto.profesores && typeof remoto.profesores[0] === 'string') {
-          remoto.profesores = remoto.profesores.map((nombre: string) => ({ nombre, foto: '' }))
+          remoto.profesores = remoto.profesores.map((nombre: string) => ({ nombre, foto: '', descripcion: '' }))
+        }
+        if (remoto.profesores) {
+          remoto.profesores = remoto.profesores.map((p: any) => ({
+            nombre: p.nombre || '',
+            foto: p.foto || '',
+            descripcion: p.descripcion || '',
+          }))
         }
         setData({ ...defaultData, ...remoto })
       } else {
@@ -76,7 +79,14 @@ const AdminPanel = ({ onLogout }: Props) => {
           try {
             const parsed = JSON.parse(saved)
             if (parsed.profesores && typeof parsed.profesores[0] === 'string') {
-              parsed.profesores = parsed.profesores.map((nombre: string) => ({ nombre, foto: '' }))
+              parsed.profesores = parsed.profesores.map((nombre: string) => ({ nombre, foto: '', descripcion: '' }))
+            }
+            if (parsed.profesores) {
+              parsed.profesores = parsed.profesores.map((p: any) => ({
+                nombre: p.nombre || '',
+                foto: p.foto || '',
+                descripcion: p.descripcion || '',
+              }))
             }
             setData({ ...defaultData, ...parsed })
           } catch {}
@@ -96,16 +106,17 @@ const AdminPanel = ({ onLogout }: Props) => {
     }
   }
 
+  const cambiarSeccion = (s: string) => {
+    setSeccion(s)
+    setSidebarAbierto(false)
+  }
+
   const subirVideoPC = (file: File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      alert('El video es muy grande. Máximo 50MB. Para videos más grandes usa Google Drive.')
-      return
-    }
+    if (file.size > 50 * 1024 * 1024) { alert('El video es muy grande. Máximo 50MB.'); return }
     setSubiendoVideo(true)
     const reader = new FileReader()
     reader.onload = (e) => {
-      const base64 = e.target?.result as string
-      setData({ ...data, videoBase64: base64, videoUrl: '' })
+      setData({ ...data, videoBase64: e.target?.result as string, videoUrl: '' })
       setSubiendoVideo(false)
     }
     reader.readAsDataURL(file)
@@ -124,19 +135,18 @@ const AdminPanel = ({ onLogout }: Props) => {
   const subirFoto = (i: number, file: File) => {
     const reader = new FileReader()
     reader.onload = (e) => {
-      const base64 = e.target?.result as string
       const p = [...data.profesores]
-      p[i] = { ...p[i], foto: base64 }
+      p[i] = { ...p[i], foto: e.target?.result as string }
       setData({ ...data, profesores: p })
     }
     reader.readAsDataURL(file)
   }
 
-  const actualizarProfesor = (i: number, campo: 'nombre' | 'foto', val: string) => {
+  const actualizarProfesor = (i: number, campo: 'nombre' | 'foto' | 'descripcion', val: string) => {
     const p = [...data.profesores]; p[i] = { ...p[i], [campo]: val }; setData({ ...data, profesores: p })
   }
-  const agregarProfesor  = () => setData({ ...data, profesores: [...data.profesores, { nombre: 'Nuevo Coach', foto: '' }] })
-  const eliminarProfesor = (i: number) => setData({ ...data, profesores: data.profesores.filter((_, idx) => idx !== i) })
+  const agregarProfesor  = () => setData({ ...data, profesores: [...data.profesores, { nombre: '', foto: '', descripcion: '' }] })
+  const eliminarProfesor = (i: number) => { if (!window.confirm('¿Eliminar este coach?')) return; setData({ ...data, profesores: data.profesores.filter((_, idx) => idx !== i) }) }
 
   const actualizarPlan = (pi: number, campo: string, val: string) => {
     const planes = [...data.planes]; planes[pi] = { ...planes[pi], [campo]: val }; setData({ ...data, planes })
@@ -154,25 +164,20 @@ const AdminPanel = ({ onLogout }: Props) => {
   const agregarReglItem    = (ri: number) => { const r = [...data.reglamento]; r[ri].items.push('Nueva regla'); setData({ ...data, reglamento: r }) }
   const eliminarReglItem   = (ri: number, ii: number) => { const r = [...data.reglamento]; r[ri].items = r[ri].items.filter((_, i) => i !== ii); setData({ ...data, reglamento: r }) }
 
+  const secciones = [
+    { id: 'general',    label: 'General',     icon: '⚙️' },
+    { id: 'tipografia', label: 'Tipografía',  icon: '🔤' },
+    { id: 'planes',     label: 'Planes',      icon: '📋' },
+    { id: 'profesores', label: 'Profesores',  icon: '👤' },
+    { id: 'reglamento', label: 'Reglamento',  icon: '📄' },
+    { id: 'horarios',   label: 'Horarios',    icon: '🕐' },
+    { id: 'cuenta',     label: 'Mi Cuenta',   icon: '🔑' },
+  ]
+
   const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', marginBottom: '16px', backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, color: 'white', fontSize: '14px', borderRadius: '2px', fontFamily: 'Inter, sans-serif', fontWeight: 300, outline: 'none' }
   const ta:  React.CSSProperties = { ...inp, minHeight: '80px', resize: 'vertical' }
   const lbl: React.CSSProperties = { fontSize: '11px', letterSpacing: '2px', color: '#666', display: 'block', marginBottom: '8px', fontFamily: 'Inter, sans-serif', fontWeight: 500 }
-  const secBtn = (s: string): React.CSSProperties => ({
-    padding: '12px 20px', border: 'none', cursor: 'pointer', width: '100%',
-    textAlign: 'left', fontSize: '12px', letterSpacing: '1px',
-    backgroundColor: seccion === s ? '#1a1a1a' : 'transparent',
-    color: seccion === s ? 'white' : '#555',
-    borderLeft: seccion === s ? '2px solid white' : '2px solid transparent',
-    transition: 'all 0.2s', fontFamily: 'Inter, sans-serif', fontWeight: seccion === s ? 500 : 300,
-  })
-  const cardStyle: React.CSSProperties = { backgroundColor: CARD, border: `1px solid ${BORDER}`, padding: '28px', borderRadius: '2px', marginBottom: '20px' }
-
-  const secciones = [
-    { id: 'general', label: 'General' }, { id: 'tipografia', label: 'Tipografía' },
-    { id: 'planes', label: 'Planes' }, { id: 'profesores', label: 'Profesores' },
-    { id: 'reglamento', label: 'Reglamento' }, { id: 'horarios', label: 'Horarios' },
-    { id: 'cuenta', label: 'Mi Cuenta' },
-  ]
+  const cardStyle: React.CSSProperties = { backgroundColor: CARD, border: `1px solid ${BORDER}`, padding: '20px', borderRadius: '2px', marginBottom: '16px' }
 
   if (cargando) return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -184,258 +189,332 @@ const AdminPanel = ({ onLogout }: Props) => {
   )
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', display: 'flex' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0a0a' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Bebas+Neue&family=Oswald:wght@700&family=Barlow+Condensed:wght@900&family=Anton&display=swap');
         * { box-sizing: border-box; }
         input, textarea { transition: border-color 0.2s; }
         input:focus, textarea:focus { border-color: white !important; outline: none; }
         input::placeholder, textarea::placeholder { color: #333; }
-        .nav-item:hover { color: #aaa !important; }
-        .btn-eliminar:hover { background-color: #3a1a1a !important; }
-        .btn-agregar:hover { border-color: white !important; color: white !important; }
-        .upload-btn:hover { border-color: white !important; color: white !important; }
-        .upload-video-btn:hover { border-color: white !important; color: white !important; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border: none; cursor: pointer; width: 100%; text-align: left; font-size: 13px; font-family: Inter, sans-serif; font-weight: 400; transition: all 0.2s; background: transparent; color: #555; border-left: 2px solid transparent; }
+        .nav-item.active { background: #1a1a1a; color: white; border-left-color: white; font-weight: 500; }
+        .nav-item:hover { color: #aaa; }
+        .btn-eliminar { padding: 8px 12px; background: #1a0a0a; border: 1px solid #ff6b6b; color: #ff6b6b; cursor: pointer; font-size: 14px; flex-shrink: 0; transition: background 0.2s; border-radius: 2px; }
+        .btn-eliminar:hover { background: #3a1a1a; }
+        .btn-agregar { background: transparent; border: 1px solid #2a2a2a; color: #555; cursor: pointer; font-family: Inter, sans-serif; transition: all 0.2s; border-radius: 2px; }
+        .btn-agregar:hover { border-color: white; color: white; }
+        .upload-btn { background: transparent; border: 1px solid #2a2a2a; color: #555; cursor: pointer; font-family: Inter, sans-serif; font-size: 10px; letter-spacing: 1px; font-weight: 500; transition: all 0.2s; text-align: center; }
+        .upload-btn:hover { border-color: white; color: white; }
+        .mobile-nav { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #080808; border-bottom: 1px solid #2a2a2a; height: 56px; align-items: center; padding: 0 16px; justify-content: space-between; }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; }
+        .sidebar-mobile { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: #080808; border-right: 1px solid #2a2a2a; z-index: 300; transition: left 0.3s ease; display: flex; flex-direction: column; }
+        .sidebar-mobile.open { left: 0; }
+        .desktop-sidebar { width: 200px; background: #080808; border-right: 1px solid #2a2a2a; flex-shrink: 0; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+        .admin-layout { display: flex; min-height: 100vh; }
+        .main-padding { padding: 28px 40px; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid #2a2a2a; background: #0a0a0a; position: sticky; top: 0; z-index: 10; gap: 16px; }
+        @media (max-width: 768px) {
+          .mobile-nav { display: flex; }
+          .desktop-sidebar { display: none; }
+          .admin-layout { display: block; padding-top: 56px; }
+          .main-padding { padding: 16px 12px; }
+          .header-bar { padding: 14px 16px; flex-wrap: wrap; gap: 10px; top: 56px; }
+          .sidebar-overlay.open { display: block; }
+        }
       `}</style>
 
-      {/* SIDEBAR */}
-      <aside style={{ width: '200px', backgroundColor: '#080808', borderRight: `1px solid ${BORDER}`, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '28px 24px', borderBottom: `1px solid ${BORDER}` }}>
-          <div style={{ fontFamily: 'Impact, Arial Black, sans-serif', fontSize: '28px', color: 'white', letterSpacing: '2px' }}>ONE</div>
-          <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', letterSpacing: '3px', color: '#333', marginTop: '6px', fontWeight: 500 }}>ADMIN PANEL</div>
-        </div>
-        <nav style={{ flex: 1, paddingTop: '16px' }}>
-          {secciones.map(s => <button key={s.id} onClick={() => setSeccion(s.id)} className="nav-item" style={secBtn(s.id)}>{s.label}</button>)}
-        </nav>
-        <div style={{ padding: '20px 24px', borderTop: `1px solid ${BORDER}` }}>
-          <button onClick={onLogout} style={{ width: '100%', padding: '10px 14px', border: `1px solid ${BORDER}`, backgroundColor: 'transparent', color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>
-            Cerrar sesión
-          </button>
-        </div>
-      </aside>
+      {/* MOBILE NAV */}
+      <div className="mobile-nav">
+        <button onClick={() => setSidebarAbierto(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '4px', padding: '4px' }}>
+          {[0,1,2].map(i => <span key={i} style={{ display: 'block', width: '22px', height: '2px', backgroundColor: 'white' }} />)}
+        </button>
+        <span style={{ fontFamily: 'Impact, sans-serif', fontSize: '22px', color: 'white', letterSpacing: '2px' }}>ONE</span>
+        <button onClick={guardar} style={{ padding: '8px 16px', backgroundColor: guardado ? 'transparent' : 'white', border: guardado ? '1px solid #4caf50' : 'none', color: guardado ? '#4caf50' : '#000', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600, borderRadius: '2px' }}>
+          {guardado ? '✓' : 'Guardar'}
+        </button>
+      </div>
 
-      {/* MAIN */}
-      <main style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '28px 40px', borderBottom: `1px solid ${BORDER}`, backgroundColor: '#0a0a0a', position: 'sticky', top: 0, zIndex: 10 }}>
+      {/* OVERLAY MOBILE */}
+      <div className={`sidebar-overlay ${sidebarAbierto ? 'open' : ''}`} onClick={() => setSidebarAbierto(false)} />
+
+      {/* SIDEBAR MOBILE */}
+      <div className={`sidebar-mobile ${sidebarAbierto ? 'open' : ''}`}>
+        <div style={{ padding: '20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: '20px', fontWeight: 600, color: 'white' }}>{secciones.find(s => s.id === seccion)?.label}</h1>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#444', marginTop: '4px', fontWeight: 300 }}>Los cambios se aplican al guardar</p>
+            <div style={{ fontFamily: 'Impact, sans-serif', fontSize: '24px', color: 'white', letterSpacing: '2px' }}>ONE</div>
+            <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', letterSpacing: '3px', color: '#333', marginTop: '4px' }}>ADMIN PANEL</div>
           </div>
-          <button onClick={guardar} style={{ padding: '12px 28px', backgroundColor: guardado ? 'transparent' : 'white', border: guardado ? '1px solid #4caf50' : 'none', color: guardado ? '#4caf50' : '#000', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', transition: 'all 0.3s', fontFamily: 'Inter, sans-serif', fontWeight: 600, borderRadius: '2px' }}>
-            {guardado ? '✓ Guardado' : 'Guardar cambios'}
-          </button>
+          <button onClick={() => setSidebarAbierto(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
+        <nav style={{ flex: 1, paddingTop: '8px', overflowY: 'auto' }}>
+          {secciones.map(s => (
+            <button key={s.id} onClick={() => cambiarSeccion(s.id)} className={`nav-item ${seccion === s.id ? 'active' : ''}`}>
+              <span>{s.icon}</span><span>{s.label}</span>
+            </button>
+          ))}
+        </nav>
+        <div style={{ padding: '16px 20px', borderTop: `1px solid ${BORDER}` }}>
+          <button onClick={onLogout} style={{ width: '100%', padding: '10px', border: `1px solid ${BORDER}`, background: 'transparent', color: '#555', fontSize: '12px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderRadius: '2px' }}>Cerrar sesión</button>
+        </div>
+      </div>
 
-        <div style={{ padding: '36px 40px' }}>
+      <div className="admin-layout">
+        {/* DESKTOP SIDEBAR */}
+        <aside className="desktop-sidebar">
+          <div style={{ padding: '28px 24px', borderBottom: `1px solid ${BORDER}` }}>
+            <div style={{ fontFamily: 'Impact, sans-serif', fontSize: '28px', color: 'white', letterSpacing: '2px' }}>ONE</div>
+            <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', letterSpacing: '3px', color: '#333', marginTop: '6px', fontWeight: 500 }}>ADMIN PANEL</div>
+          </div>
+          <nav style={{ flex: 1, paddingTop: '8px' }}>
+            {secciones.map(s => (
+              <button key={s.id} onClick={() => cambiarSeccion(s.id)} className={`nav-item ${seccion === s.id ? 'active' : ''}`}>
+                {s.label}
+              </button>
+            ))}
+          </nav>
+          <div style={{ padding: '20px 24px', borderTop: `1px solid ${BORDER}` }}>
+            <button onClick={onLogout} style={{ width: '100%', padding: '10px', border: `1px solid ${BORDER}`, background: 'transparent', color: '#555', fontSize: '11px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', borderRadius: '2px' }}>Cerrar sesión</button>
+          </div>
+        </aside>
 
-          {/* GENERAL */}
-          {seccion === 'general' && (
-            <div style={{ maxWidth: '640px' }}>
-              <div style={cardStyle}>
-                <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '24px' }}>Textos principales</h2>
-                <span style={lbl}>SLOGAN</span>
-                <input value={data.slogan} onChange={e => setData({ ...data, slogan: e.target.value })} style={inp} />
-                <span style={lbl}>DESCRIPCIÓN — QUIÉNES SOMOS</span>
-                <textarea value={data.sobreOne} onChange={e => setData({ ...data, sobreOne: e.target.value })} style={ta} />
-                <span style={lbl}>FRASE DESTACADA</span>
-                <textarea value={data.sobreOneFrase} onChange={e => setData({ ...data, sobreOneFrase: e.target.value })} style={{ ...ta, marginBottom: '24px' }} />
+        {/* MAIN */}
+        <main style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="header-bar">
+            <div>
+              <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: '20px', fontWeight: 600, color: 'white' }}>
+                {secciones.find(s => s.id === seccion)?.label}
+              </h1>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#444', marginTop: '4px', fontWeight: 300 }}>Los cambios se aplican al guardar</p>
+            </div>
+            <button onClick={guardar} style={{ padding: '12px 24px', backgroundColor: guardado ? 'transparent' : 'white', border: guardado ? '1px solid #4caf50' : 'none', color: guardado ? '#4caf50' : '#000', fontSize: '12px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600, borderRadius: '2px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {guardado ? '✓ Guardado' : 'Guardar cambios'}
+            </button>
+          </div>
+
+          <div className="main-padding">
+
+            {/* GENERAL */}
+            {seccion === 'general' && (
+              <div style={{ maxWidth: '640px' }}>
+                <div style={cardStyle}>
+                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '20px' }}>Textos principales</h2>
+                  <span style={lbl}>SLOGAN</span>
+                  <input value={data.slogan} onChange={e => setData({ ...data, slogan: e.target.value })} style={inp} />
+                  <span style={lbl}>DESCRIPCIÓN — QUIÉNES SOMOS</span>
+                  <textarea value={data.sobreOne} onChange={e => setData({ ...data, sobreOne: e.target.value })} style={ta} />
+                  <span style={lbl}>FRASE DESTACADA</span>
+                  <textarea value={data.sobreOneFrase} onChange={e => setData({ ...data, sobreOneFrase: e.target.value })} style={{ ...ta, marginBottom: 0 }} />
+                </div>
+
+                <div style={cardStyle}>
+                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Video de inicio</h2>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '20px', fontWeight: 300, lineHeight: 1.6 }}>El video reemplaza la imagen de fondo en la sección de inicio.</p>
+
+                  {(data.videoBase64 || data.videoUrl) && (
+                    <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '14px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: 'white', fontWeight: 500 }}>
+                        {data.videoBase64 ? '✓ Video subido desde PC' : '✓ Video de Google Drive'}
+                      </p>
+                      <button onClick={() => setData({ ...data, videoBase64: '', videoUrl: '' })} style={{ padding: '6px 12px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', fontFamily: 'Inter, sans-serif', borderRadius: '2px' }}>Quitar</button>
+                    </div>
+                  )}
+
+                  <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '12px' }}>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#aaa', fontWeight: 500, marginBottom: '4px', letterSpacing: '1px' }}>OPCIÓN 1 — SUBIR DESDE EL COMPUTADOR</p>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginBottom: '14px', fontWeight: 300 }}>Máximo 50MB. Formatos: MP4, MOV, WEBM.</p>
+                    <input type="file" accept="video/*" ref={videoRef} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) subirVideoPC(f) }} />
+                    <button className="upload-btn" onClick={() => videoRef.current?.click()} disabled={subiendoVideo}
+                      style={{ padding: '10px 20px', fontSize: '11px', letterSpacing: '1px', width: '100%' }}>
+                      {subiendoVideo ? 'PROCESANDO...' : '↑ SELECCIONAR VIDEO'}
+                    </button>
+                  </div>
+
+                  <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px' }}>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#aaa', fontWeight: 500, marginBottom: '4px', letterSpacing: '1px' }}>OPCIÓN 2 — URL DE GOOGLE DRIVE</p>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginBottom: '14px', fontWeight: 300 }}>
+                      Formato: https://drive.google.com/file/d/<strong style={{ color: '#888' }}>ID</strong>/preview
+                    </p>
+                    <input value={data.videoUrl || ''} onChange={e => setData({ ...data, videoUrl: e.target.value, videoBase64: '' })}
+                      placeholder="https://drive.google.com/file/d/TU_ID/preview" style={{ ...inp, marginBottom: 0 }} />
+                  </div>
+                </div>
               </div>
+            )}
 
-              {/* VIDEO */}
-              <div style={cardStyle}>
-                <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Video de inicio</h2>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '24px', fontWeight: 300, lineHeight: 1.7 }}>
-                  El video reemplaza la imagen de fondo en la sección de inicio. Puedes subir uno desde tu computador o usar un enlace de Google Drive.
-                </p>
+            {/* TIPOGRAFÍA */}
+            {seccion === 'tipografia' && (
+              <div style={{ maxWidth: '640px' }}>
+                <div style={cardStyle}>
+                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Tipografía de títulos</h2>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '24px', fontWeight: 300 }}>Selecciona la fuente para todos los títulos de la página web.</p>
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    {FUENTES_OPCIONES.map(f => {
+                      const sel = data.fuenteTitulos === f
+                      return (
+                        <button key={f} onClick={() => setData({ ...data, fuenteTitulos: f })} style={{ padding: '16px 20px', backgroundColor: sel ? '#1a1a1a' : 'transparent', border: sel ? '1px solid white' : `1px solid ${BORDER}`, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '2px', gap: '12px', flexWrap: 'wrap' }}>
+                          <span style={{ fontFamily: FUENTES_MAP[f], fontSize: 'clamp(16px, 4vw, 24px)', color: 'white', fontWeight: 900 }}>ONE YOUR EVOLUTION</span>
+                          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', letterSpacing: '2px', color: sel ? 'white' : '#444', fontWeight: 500, flexShrink: 0 }}>{sel ? '✓ ACTIVA' : f.toUpperCase()}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
 
-                {/* Preview del video actual */}
-                {(data.videoBase64 || data.videoUrl) && (
-                  <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '40px', height: '40px', backgroundColor: '#1a1a1a', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="#aaa"><path d="M8 5v14l11-7z"/></svg>
+            {/* PROFESORES */}
+            {seccion === 'profesores' && (
+              <div style={{ maxWidth: '700px' }}>
+                <div style={cardStyle}>
+                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Coaches</h2>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '20px', fontWeight: 300, lineHeight: 1.6 }}>
+                    Agrega los coaches del gimnasio con su foto, nombre y descripción. Solo aparecerán en la web los que agregues aquí.
+                  </p>
+
+                  {data.profesores.length === 0 && (
+                    <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '24px', textAlign: 'center', marginBottom: '16px' }}>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#444', fontWeight: 300 }}>No hay coaches agregados aún.</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#333', marginTop: '4px', fontWeight: 300 }}>Haz clic en "+ Agregar Coach" para comenzar.</p>
+                    </div>
+                  )}
+
+                  {data.profesores.map((prof, i) => (
+                    <div key={i} style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '12px' }}>
+                      {/* Header card coach */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#aaa', fontWeight: 500 }}>
+                          {prof.nombre || 'Nuevo Coach'}
+                        </p>
+                        <button className="btn-eliminar" onClick={() => eliminarProfesor(i)}>✕ Eliminar</button>
+                      </div>
+
+                      {/* Foto + nombre en fila */}
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap' }}>
+                        {/* Foto */}
+                        <div style={{ flexShrink: 0 }}>
+                          <div style={{ width: '100px', height: '100px', backgroundColor: '#1a1a1a', border: `1px solid ${BORDER}`, borderRadius: '4px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                            {prof.foto
+                              ? <img src={prof.foto} alt={prof.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : <span style={{ fontFamily: 'Impact, sans-serif', fontSize: '36px', color: '#222' }}>{prof.nombre ? prof.nombre.charAt(0).toUpperCase() : '?'}</span>
+                            }
+                          </div>
+                          <input type="file" accept="image/*" ref={el => { fileRefs.current[i] = el }} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) subirFoto(i, f) }} />
+                          <button className="upload-btn" onClick={() => fileRefs.current[i]?.click()} style={{ width: '100px', padding: '6px 0', display: 'block' }}>
+                            {prof.foto ? 'CAMBIAR' : 'SUBIR FOTO'}
+                          </button>
+                          {prof.foto && (
+                            <button onClick={() => actualizarProfesor(i, 'foto', '')} style={{ width: '100px', padding: '5px 0', marginTop: '4px', background: 'transparent', border: '1px solid #2a1a1a', color: '#ff6b6b', fontSize: '10px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'block', textAlign: 'center', borderRadius: '2px' }}>QUITAR FOTO</button>
+                          )}
                         </div>
-                        <div>
-                          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: 'white', fontWeight: 500 }}>
-                            {data.videoBase64 ? 'Video subido desde PC' : 'Video de Google Drive'}
-                          </p>
-                          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginTop: '2px', fontWeight: 300 }}>
-                            {data.videoBase64 ? 'Guardado localmente' : data.videoUrl}
-                          </p>
+
+                        {/* Nombre */}
+                        <div style={{ flex: 1, minWidth: '160px' }}>
+                          <span style={lbl}>NOMBRE</span>
+                          <input value={prof.nombre} onChange={e => actualizarProfesor(i, 'nombre', e.target.value)} placeholder="Nombre del coach" style={{ ...inp, marginBottom: 0 }} />
                         </div>
                       </div>
-                      <button onClick={() => setData({ ...data, videoBase64: '', videoUrl: '' })} style={{ padding: '6px 12px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', fontFamily: 'Inter, sans-serif' }}>
-                        Quitar
-                      </button>
-                    </div>
-                  </div>
-                )}
 
-                {/* Opción 1: subir desde PC */}
-                <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '20px', marginBottom: '16px' }}>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#aaa', fontWeight: 500, marginBottom: '4px', letterSpacing: '1px' }}>OPCIÓN 1 — SUBIR DESDE EL COMPUTADOR</p>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginBottom: '16px', fontWeight: 300 }}>Máximo 50MB. Formatos: MP4, MOV, WEBM.</p>
-                  <input type="file" accept="video/*" ref={videoRef} style={{ display: 'none' }}
-                    onChange={e => { const file = e.target.files?.[0]; if (file) subirVideoPC(file) }} />
-                  <button className="upload-video-btn" onClick={() => videoRef.current?.click()}
-                    disabled={subiendoVideo}
-                    style={{ padding: '10px 24px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: subiendoVideo ? '#555' : '#ccc', fontSize: '12px', letterSpacing: '2px', cursor: subiendoVideo ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, transition: 'all 0.2s' }}>
-                    {subiendoVideo ? 'PROCESANDO...' : '↑ SELECCIONAR VIDEO'}
+                      {/* Descripción */}
+                      <span style={lbl}>DESCRIPCIÓN</span>
+                      <textarea
+                        value={prof.descripcion}
+                        onChange={e => actualizarProfesor(i, 'descripcion', e.target.value)}
+                        placeholder="Ej: Especialista en entrenamiento de fuerza con 5 años de experiencia..."
+                        style={{ ...ta, marginBottom: 0, minHeight: '72px' }}
+                      />
+                    </div>
+                  ))}
+
+                  <button className="btn-agregar" onClick={agregarProfesor} style={{ width: '100%', padding: '14px', fontSize: '12px', letterSpacing: '2px', marginTop: '8px', border: '1px solid white', color: 'white' }}>
+                    + Agregar Coach
                   </button>
                 </div>
-
-                {/* Opción 2: URL Drive */}
-                <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '20px' }}>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#aaa', fontWeight: 500, marginBottom: '4px', letterSpacing: '1px' }}>OPCIÓN 2 — URL DE GOOGLE DRIVE</p>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginBottom: '16px', fontWeight: 300, lineHeight: 1.7 }}>
-                    Ideal para videos mayores a 50MB.<br />
-                    Formato: https://drive.google.com/file/d/<strong style={{ color: '#888' }}>ID</strong>/preview
-                  </p>
-                  <input
-                    value={data.videoUrl || ''}
-                    onChange={e => setData({ ...data, videoUrl: e.target.value, videoBase64: '' })}
-                    placeholder="https://drive.google.com/file/d/TU_ID/preview"
-                    style={{ ...inp, marginBottom: 0 }}
-                  />
-                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* TIPOGRAFÍA */}
-          {seccion === 'tipografia' && (
-            <div style={{ maxWidth: '640px' }}>
-              <div style={cardStyle}>
-                <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Tipografía de títulos</h2>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '28px', fontWeight: 300 }}>Selecciona la fuente para todos los títulos. Los cambios se ven al guardar y recargar la página web.</p>
-                <div style={{ display: 'grid', gap: '10px' }}>
-                  {FUENTES_OPCIONES.map(f => {
-                    const sel = data.fuenteTitulos === f
-                    return (
-                      <button key={f} onClick={() => setData({ ...data, fuenteTitulos: f })} style={{ padding: '18px 24px', backgroundColor: sel ? '#1a1a1a' : 'transparent', border: sel ? '1px solid white' : `1px solid ${BORDER}`, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '2px' }}>
-                        <span style={{ fontFamily: FUENTES_MAP[f], fontSize: '26px', color: 'white', fontWeight: 900 }}>ONE YOUR EVOLUTION</span>
-                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', letterSpacing: '2px', color: sel ? 'white' : '#444', fontWeight: 500 }}>{sel ? '✓ ACTIVA' : f.toUpperCase()}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* PROFESORES */}
-          {seccion === 'profesores' && (
-            <div style={{ maxWidth: '680px' }}>
-              <div style={cardStyle}>
-                <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Coaches</h2>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '28px', fontWeight: 300, lineHeight: 1.6 }}>Agrega el nombre y foto de cada coach. Puedes subir una imagen directamente desde tu computador.</p>
-                {data.profesores.map((prof, i) => (
-                  <div key={i} style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '20px', marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                      <div style={{ flexShrink: 0 }}>
-                        <div style={{ width: '80px', height: '80px', backgroundColor: '#1a1a1a', border: `1px solid ${BORDER}`, borderRadius: '2px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
-                          {prof.foto ? <img src={prof.foto} alt={prof.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontFamily: 'Impact, sans-serif', fontSize: '28px', color: '#222' }}>{prof.nombre ? prof.nombre.charAt(0).toUpperCase() : '?'}</span>}
-                        </div>
-                        <input type="file" accept="image/*" ref={el => { fileRefs.current[i] = el }} style={{ display: 'none' }} onChange={e => { const file = e.target.files?.[0]; if (file) subirFoto(i, file) }} />
-                        <button className="upload-btn" onClick={() => fileRefs.current[i]?.click()} style={{ width: '80px', padding: '6px 0', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '10px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, transition: 'all 0.2s' }}>{prof.foto ? 'CAMBIAR' : 'SUBIR'}</button>
-                        {prof.foto && <button onClick={() => actualizarProfesor(i, 'foto', '')} style={{ width: '80px', padding: '6px 0', marginTop: '4px', backgroundColor: 'transparent', border: '1px solid #2a1a1a', color: '#ff6b6b', fontSize: '10px', letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, display: 'block' }}>QUITAR</button>}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <span style={lbl}>NOMBRE</span>
-                        <input value={prof.nombre} onChange={e => actualizarProfesor(i, 'nombre', e.target.value)} style={{ ...inp, marginBottom: 0 }} />
-                      </div>
-                      <button className="btn-eliminar" onClick={() => eliminarProfesor(i)} style={{ padding: '8px 12px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0 }}>✕</button>
+            {/* PLANES */}
+            {seccion === 'planes' && (
+              <div style={{ maxWidth: '720px' }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '20px', fontWeight: 300 }}>Puedes editar, agregar o eliminar planes. Recuerda guardar los cambios.</p>
+                {data.planes.map((plan, pi) => (
+                  <div key={pi} style={cardStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
+                      <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white' }}>{plan.nombre}</h2>
+                      <button onClick={() => eliminarPlan(pi)} style={{ padding: '6px 12px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', fontFamily: 'Inter, sans-serif', borderRadius: '2px', whiteSpace: 'nowrap' }}>Eliminar plan</button>
                     </div>
+                    <span style={lbl}>NOMBRE</span>
+                    <input value={plan.nombre} onChange={e => actualizarPlan(pi, 'nombre', e.target.value)} style={inp} />
+                    <span style={lbl}>DESCRIPCIÓN</span>
+                    <input value={plan.descripcion} onChange={e => actualizarPlan(pi, 'descripcion', e.target.value)} style={inp} />
+                    <span style={lbl}>PRECIOS</span>
+                    {plan.precios.map((p, ji) => (
+                      <div key={ji} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <input value={p.frecuencia} onChange={e => actualizarPrecio(pi, ji, 'frecuencia', e.target.value)} style={{ ...inp, flex: '2 1 120px', marginBottom: 0, minWidth: 0 }} placeholder="Frecuencia" />
+                        <input value={p.valor} onChange={e => actualizarPrecio(pi, ji, 'valor', e.target.value)} style={{ ...inp, flex: '1 1 80px', marginBottom: 0, minWidth: 0 }} placeholder="$0" />
+                        <button className="btn-eliminar" onClick={() => eliminarPrecio(pi, ji)}>✕</button>
+                      </div>
+                    ))}
+                    <button className="btn-agregar" onClick={() => agregarPrecio(pi)} style={{ padding: '8px 16px', fontSize: '11px', letterSpacing: '1px', marginTop: '8px' }}>+ Agregar precio</button>
                   </div>
                 ))}
-                <button className="btn-agregar" onClick={agregarProfesor} style={{ width: '100%', padding: '14px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', marginTop: '8px', transition: 'all 0.2s', fontFamily: 'Inter, sans-serif', fontWeight: 500 }}>+ Agregar Coach</button>
+                <button className="btn-agregar" onClick={agregarPlan} style={{ width: '100%', padding: '14px', fontSize: '12px', letterSpacing: '2px', marginTop: '4px', border: '1px solid white', color: 'white' }}>+ Agregar nuevo plan</button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* PLANES */}
-          {seccion === 'planes' && (
-            <div style={{ maxWidth: '720px' }}>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '24px', fontWeight: 300 }}>Puedes editar, agregar o eliminar planes. Recuerda guardar los cambios.</p>
-              {data.planes.map((plan, pi) => (
-                <div key={pi} style={cardStyle}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white' }}>{plan.nombre}</h2>
-                    <button onClick={() => eliminarPlan(pi)} style={{ padding: '6px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', letterSpacing: '1px', fontFamily: 'Inter, sans-serif' }}>Eliminar plan</button>
+            {/* REGLAMENTO */}
+            {seccion === 'reglamento' && (
+              <div style={{ maxWidth: '720px' }}>
+                {data.reglamento.map((reg, ri) => (
+                  <div key={ri} style={cardStyle}>
+                    <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '16px' }}>{reg.titulo}</h2>
+                    <span style={lbl}>TÍTULO DE SECCIÓN</span>
+                    <input value={reg.titulo} onChange={e => { const r = [...data.reglamento]; r[ri] = { ...r[ri], titulo: e.target.value }; setData({ ...data, reglamento: r }) }} style={inp} />
+                    <span style={lbl}>REGLAS</span>
+                    {reg.items.map((item, ii) => (
+                      <div key={ii} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'flex-start' }}>
+                        <textarea value={item} onChange={e => actualizarReglItem(ri, ii, e.target.value)} style={{ ...ta, flex: 1, marginBottom: 0, minHeight: '56px' }} />
+                        <button className="btn-eliminar" onClick={() => eliminarReglItem(ri, ii)} style={{ marginTop: '2px' }}>✕</button>
+                      </div>
+                    ))}
+                    <button className="btn-agregar" onClick={() => agregarReglItem(ri)} style={{ padding: '8px 16px', fontSize: '11px', letterSpacing: '1px', marginTop: '8px' }}>+ Agregar regla</button>
                   </div>
-                  <span style={lbl}>NOMBRE</span>
-                  <input value={plan.nombre} onChange={e => actualizarPlan(pi, 'nombre', e.target.value)} style={inp} />
-                  <span style={lbl}>DESCRIPCIÓN</span>
-                  <input value={plan.descripcion} onChange={e => actualizarPlan(pi, 'descripcion', e.target.value)} style={inp} />
-                  <span style={lbl}>PRECIOS</span>
-                  {plan.precios.map((p, ji) => (
-                    <div key={ji} style={{ display: 'flex', gap: '12px', marginBottom: '10px', alignItems: 'center' }}>
-                      <input value={p.frecuencia} onChange={e => actualizarPrecio(pi, ji, 'frecuencia', e.target.value)} style={{ ...inp, flex: 2, marginBottom: 0 }} />
-                      <input value={p.valor} onChange={e => actualizarPrecio(pi, ji, 'valor', e.target.value)} style={{ ...inp, flex: 1, marginBottom: 0 }} />
-                      <button className="btn-eliminar" onClick={() => eliminarPrecio(pi, ji)} style={{ padding: '10px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0 }}>✕</button>
-                    </div>
-                  ))}
-                  <button className="btn-agregar" onClick={() => agregarPrecio(pi)} style={{ padding: '8px 20px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', marginTop: '8px', fontFamily: 'Inter, sans-serif' }}>+ Agregar precio</button>
-                </div>
-              ))}
-              <button className="btn-agregar" onClick={agregarPlan} style={{ width: '100%', padding: '16px', backgroundColor: 'transparent', border: '1px solid white', color: 'white', fontSize: '12px', letterSpacing: '3px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 500, transition: 'all 0.2s', marginTop: '8px' }}>+ Agregar nuevo plan</button>
-            </div>
-          )}
-
-          {/* REGLAMENTO */}
-          {seccion === 'reglamento' && (
-            <div style={{ maxWidth: '720px' }}>
-              {data.reglamento.map((reg, ri) => (
-                <div key={ri} style={cardStyle}>
-                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '20px' }}>{reg.titulo}</h2>
-                  <span style={lbl}>TÍTULO DE SECCIÓN</span>
-                  <input value={reg.titulo} onChange={e => { const r = [...data.reglamento]; r[ri] = { ...r[ri], titulo: e.target.value }; setData({ ...data, reglamento: r }) }} style={inp} />
-                  <span style={lbl}>REGLAS</span>
-                  {reg.items.map((item, ii) => (
-                    <div key={ii} style={{ display: 'flex', gap: '12px', marginBottom: '10px', alignItems: 'flex-start' }}>
-                      <textarea value={item} onChange={e => actualizarReglItem(ri, ii, e.target.value)} style={{ ...ta, flex: 1, marginBottom: 0, minHeight: '56px' }} />
-                      <button className="btn-eliminar" onClick={() => eliminarReglItem(ri, ii)} style={{ padding: '10px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px', flexShrink: 0, marginTop: '2px' }}>✕</button>
-                    </div>
-                  ))}
-                  <button className="btn-agregar" onClick={() => agregarReglItem(ri)} style={{ padding: '8px 20px', backgroundColor: 'transparent', border: `1px solid ${BORDER}`, color: '#555', fontSize: '11px', letterSpacing: '1px', cursor: 'pointer', marginTop: '8px', fontFamily: 'Inter, sans-serif' }}>+ Agregar regla</button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* HORARIOS */}
-          {seccion === 'horarios' && (
-            <div style={{ maxWidth: '560px' }}>
-              <div style={cardStyle}>
-                <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '24px' }}>Horarios de atención</h2>
-                <span style={lbl}>LUNES A VIERNES</span>
-                <input value={data.horarioSemana} onChange={e => setData({ ...data, horarioSemana: e.target.value })} style={inp} />
-                <span style={lbl}>SÁBADOS</span>
-                <input value={data.horarioSabado} onChange={e => setData({ ...data, horarioSabado: e.target.value })} style={{ ...inp, marginBottom: 0 }} />
+                ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* CUENTA */}
-          {seccion === 'cuenta' && (
-            <div style={{ maxWidth: '480px' }}>
-              <div style={cardStyle}>
-                <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Cambiar contraseña</h2>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '24px', fontWeight: 300 }}>Actualiza la contraseña de acceso al panel de administración.</p>
-                {errorClave && <div style={{ backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', padding: '10px 14px', marginBottom: '16px', borderRadius: '2px' }}><p style={{ fontFamily: 'Inter, sans-serif', color: '#ff6b6b', fontSize: '13px', fontWeight: 400 }}>{errorClave}</p></div>}
-                {exitoClave && <div style={{ backgroundColor: '#0a1a0a', border: '1px solid #4caf50', padding: '10px 14px', marginBottom: '16px', borderRadius: '2px' }}><p style={{ fontFamily: 'Inter, sans-serif', color: '#4caf50', fontSize: '13px', fontWeight: 400 }}>{exitoClave}</p></div>}
-                <span style={lbl}>NUEVA CONTRASEÑA</span>
-                <input type="password" value={nuevaClave} onChange={e => setNuevaClave(e.target.value)} placeholder="Mínimo 6 caracteres" style={inp} />
-                <span style={lbl}>CONFIRMAR CONTRASEÑA</span>
-                <input type="password" value={confirmarClave} onChange={e => setConfirmarClave(e.target.value)} placeholder="Repite la contraseña" style={{ ...inp, marginBottom: '20px' }} />
-                <button onClick={cambiarClave} style={{ width: '100%', padding: '14px', backgroundColor: 'white', border: 'none', color: '#000', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>Actualizar contraseña</button>
+            {/* HORARIOS */}
+            {seccion === 'horarios' && (
+              <div style={{ maxWidth: '560px' }}>
+                <div style={cardStyle}>
+                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '20px' }}>Horarios de atención</h2>
+                  <span style={lbl}>LUNES A VIERNES</span>
+                  <input value={data.horarioSemana} onChange={e => setData({ ...data, horarioSemana: e.target.value })} style={inp} />
+                  <span style={lbl}>SÁBADOS</span>
+                  <input value={data.horarioSabado} onChange={e => setData({ ...data, horarioSabado: e.target.value })} style={{ ...inp, marginBottom: 0 }} />
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-        </div>
-      </main>
+            {/* CUENTA */}
+            {seccion === 'cuenta' && (
+              <div style={{ maxWidth: '480px' }}>
+                <div style={cardStyle}>
+                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Cambiar contraseña</h2>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '20px', fontWeight: 300 }}>Actualiza la contraseña de acceso al panel de administración.</p>
+                  {errorClave && <div style={{ backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', padding: '10px 14px', marginBottom: '16px', borderRadius: '2px' }}><p style={{ fontFamily: 'Inter, sans-serif', color: '#ff6b6b', fontSize: '13px' }}>{errorClave}</p></div>}
+                  {exitoClave && <div style={{ backgroundColor: '#0a1a0a', border: '1px solid #4caf50', padding: '10px 14px', marginBottom: '16px', borderRadius: '2px' }}><p style={{ fontFamily: 'Inter, sans-serif', color: '#4caf50', fontSize: '13px' }}>{exitoClave}</p></div>}
+                  <span style={lbl}>NUEVA CONTRASEÑA</span>
+                  <input type="password" value={nuevaClave} onChange={e => setNuevaClave(e.target.value)} placeholder="Mínimo 6 caracteres" style={inp} />
+                  <span style={lbl}>CONFIRMAR CONTRASEÑA</span>
+                  <input type="password" value={confirmarClave} onChange={e => setConfirmarClave(e.target.value)} placeholder="Repite la contraseña" style={{ ...inp, marginBottom: '20px' }} />
+                  <button onClick={cambiarClave} style={{ width: '100%', padding: '14px', backgroundColor: 'white', border: 'none', color: '#000', fontSize: '12px', letterSpacing: '2px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontWeight: 600, borderRadius: '2px' }}>Actualizar contraseña</button>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </main>
+      </div>
     </div>
   )
 }
