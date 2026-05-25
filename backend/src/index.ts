@@ -1,39 +1,55 @@
 import express from 'express'
 import cors from 'cors'
-import fs from 'fs'
-import path from 'path'
+import { createClient } from '@supabase/supabase-js'
 
 const app  = express()
 const PORT = process.env.PORT || 4000
-const DATA_FILE = path.join(__dirname, '..', 'data', 'config.json')
+
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://cetpegtvkpjipshapjmm.supabase.co'
+const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNldHBlZ3R2a3BqaXBzaGFwam1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NDQwMzksImV4cCI6MjA5NTIyMDAzOX0.bc5o6RBYUBf942tZCoQYXla1XUQE1j8u4FOfvIdBaVk'
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 app.use(cors())
-app.use(express.json({ limit: '10mb' }))
-
-// Asegurar que existe la carpeta data
-const dataDir = path.join(__dirname, '..', 'data')
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true })
+app.use(express.json({ limit: '15mb' }))
 
 // GET — obtener configuración
-app.get('/api/config', (req, res) => {
+app.get('/api/config', async (req, res) => {
   try {
-    if (!fs.existsSync(DATA_FILE)) {
+    const { data, error } = await supabase
+      .from('configuracion')
+      .select('datos')
+      .eq('id', 1)
+      .single()
+
+    if (error) {
+      console.error('Error al leer:', error)
       return res.json({})
     }
-    const data = fs.readFileSync(DATA_FILE, 'utf-8')
-    return res.json(JSON.parse(data))
-  } catch {
-    return res.status(500).json({ error: 'Error al leer configuración' })
+
+    return res.json(data?.datos || {})
+  } catch (err) {
+    console.error('Error inesperado:', err)
+    return res.status(500).json({ error: 'Error al obtener configuración' })
   }
 })
 
 // PUT — guardar configuración
-app.put('/api/config', (req, res) => {
+app.put('/api/config', async (req, res) => {
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(req.body, null, 2))
+    const { error } = await supabase
+      .from('configuracion')
+      .upsert({ id: 1, datos: req.body, updated_at: new Date().toISOString() })
+
+    if (error) {
+      console.error('Error al guardar:', error)
+      return res.status(500).json({ error: 'Error al guardar configuración' })
+    }
+
     return res.json({ mensaje: 'Configuración guardada exitosamente' })
-  } catch {
-    return res.status(500).json({ error: 'Error al guardar configuración' })
+  } catch (err) {
+    console.error('Error inesperado:', err)
+    return res.status(500).json({ error: 'Error inesperado' })
   }
 })
 
@@ -43,5 +59,5 @@ app.get('/api/health', (req, res) => {
 })
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor web corriendo en http://localhost:${PORT}`)
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`)
 })
