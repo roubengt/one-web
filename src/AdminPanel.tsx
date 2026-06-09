@@ -22,6 +22,7 @@ const defaultData = {
   fuenteTitulos: 'Impact',
   videoUrl:      '',
   videoBase64:   '',
+  terminosPdf:   '' as string,
   profesores:    [] as { nombre: string; foto: string; descripcion: string }[],
   planes: [
     { nombre: 'PLAN PERSONAL', descripcion: 'Sesiones uno a uno con tu Coach', precios: [{ frecuencia: '2 veces x semana', valor: '$230.000' }, { frecuencia: '3 veces x semana', valor: '$260.000' }, { frecuencia: '4 veces x semana', valor: '$290.000' }] },
@@ -56,6 +57,7 @@ const AdminPanel = ({ onLogout }: Props) => {
   const [subiendoVideo, setSubiendoVideo] = useState(false)
   const fileRefs = useRef<(HTMLInputElement | null)[]>([])
   const videoRef = useRef<HTMLInputElement | null>(null)
+  const terminosRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     const cargar = async () => {
@@ -106,19 +108,20 @@ const AdminPanel = ({ onLogout }: Props) => {
     }
   }
 
-  const cambiarSeccion = (s: string) => {
-    setSeccion(s)
-    setSidebarAbierto(false)
-  }
+  const cambiarSeccion = (s: string) => { setSeccion(s); setSidebarAbierto(false) }
 
   const subirVideoPC = (file: File) => {
     if (file.size > 50 * 1024 * 1024) { alert('El video es muy grande. Máximo 50MB.'); return }
     setSubiendoVideo(true)
     const reader = new FileReader()
-    reader.onload = (e) => {
-      setData({ ...data, videoBase64: e.target?.result as string, videoUrl: '' })
-      setSubiendoVideo(false)
-    }
+    reader.onload = (e) => { setData({ ...data, videoBase64: e.target?.result as string, videoUrl: '' }); setSubiendoVideo(false) }
+    reader.readAsDataURL(file)
+  }
+
+  const subirTerminosPdf = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) { alert('El archivo es muy grande. Máximo 10MB.'); return }
+    const reader = new FileReader()
+    reader.onload = (e) => { setData({ ...data, terminosPdf: e.target?.result as string }) }
     reader.readAsDataURL(file)
   }
 
@@ -135,9 +138,7 @@ const AdminPanel = ({ onLogout }: Props) => {
   const subirFoto = (i: number, file: File) => {
     const reader = new FileReader()
     reader.onload = (e) => {
-      const p = [...data.profesores]
-      p[i] = { ...p[i], foto: e.target?.result as string }
-      setData({ ...data, profesores: p })
+      const p = [...data.profesores]; p[i] = { ...p[i], foto: e.target?.result as string }; setData({ ...data, profesores: p })
     }
     reader.readAsDataURL(file)
   }
@@ -165,13 +166,14 @@ const AdminPanel = ({ onLogout }: Props) => {
   const eliminarReglItem   = (ri: number, ii: number) => { const r = [...data.reglamento]; r[ri].items = r[ri].items.filter((_, i) => i !== ii); setData({ ...data, reglamento: r }) }
 
   const secciones = [
-    { id: 'general',    label: 'General',     icon: '⚙️' },
-    { id: 'tipografia', label: 'Tipografía',  icon: '🔤' },
-    { id: 'planes',     label: 'Planes',      icon: '📋' },
-    { id: 'profesores', label: 'Profesores',  icon: '👤' },
-    { id: 'reglamento', label: 'Reglamento',  icon: '📄' },
-    { id: 'horarios',   label: 'Horarios',    icon: '🕐' },
-    { id: 'cuenta',     label: 'Mi Cuenta',   icon: '🔑' },
+    { id: 'general',    label: 'General',                  icon: '⚙️' },
+    { id: 'tipografia', label: 'Tipografía',               icon: '🔤' },
+    { id: 'planes',     label: 'Planes',                   icon: '📋' },
+    { id: 'profesores', label: 'Profesores',               icon: '👤' },
+    { id: 'reglamento', label: 'Reglamento',               icon: '📄' },
+    { id: 'horarios',   label: 'Horarios',                 icon: '🕐' },
+    { id: 'terminos',   label: 'Términos y Condiciones',   icon: '📃' },
+    { id: 'cuenta',     label: 'Mi Cuenta',                icon: '🔑' },
   ]
 
   const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', marginBottom: '16px', backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, color: 'white', fontSize: '14px', borderRadius: '2px', fontFamily: 'Inter, sans-serif', fontWeight: 300, outline: 'none' }
@@ -209,7 +211,7 @@ const AdminPanel = ({ onLogout }: Props) => {
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; }
         .sidebar-mobile { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: #080808; border-right: 1px solid #2a2a2a; z-index: 300; transition: left 0.3s ease; display: flex; flex-direction: column; }
         .sidebar-mobile.open { left: 0; }
-        .desktop-sidebar { width: 200px; background: #080808; border-right: 1px solid #2a2a2a; flex-shrink: 0; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+        .desktop-sidebar { width: 220px; background: #080808; border-right: 1px solid #2a2a2a; flex-shrink: 0; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
         .admin-layout { display: flex; min-height: 100vh; }
         .main-padding { padding: 28px 40px; }
         .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid #2a2a2a; background: #0a0a0a; position: sticky; top: 0; z-index: 10; gap: 16px; }
@@ -234,10 +236,8 @@ const AdminPanel = ({ onLogout }: Props) => {
         </button>
       </div>
 
-      {/* OVERLAY MOBILE */}
       <div className={`sidebar-overlay ${sidebarAbierto ? 'open' : ''}`} onClick={() => setSidebarAbierto(false)} />
 
-      {/* SIDEBAR MOBILE */}
       <div className={`sidebar-mobile ${sidebarAbierto ? 'open' : ''}`}>
         <div style={{ padding: '20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -259,7 +259,6 @@ const AdminPanel = ({ onLogout }: Props) => {
       </div>
 
       <div className="admin-layout">
-        {/* DESKTOP SIDEBAR */}
         <aside className="desktop-sidebar">
           <div style={{ padding: '28px 24px', borderBottom: `1px solid ${BORDER}` }}>
             <div style={{ fontFamily: 'Impact, sans-serif', fontSize: '28px', color: 'white', letterSpacing: '2px' }}>ONE</div>
@@ -277,7 +276,6 @@ const AdminPanel = ({ onLogout }: Props) => {
           </div>
         </aside>
 
-        {/* MAIN */}
         <main style={{ flex: 1, overflowY: 'auto' }}>
           <div className="header-bar">
             <div>
@@ -305,11 +303,9 @@ const AdminPanel = ({ onLogout }: Props) => {
                   <span style={lbl}>FRASE DESTACADA</span>
                   <textarea value={data.sobreOneFrase} onChange={e => setData({ ...data, sobreOneFrase: e.target.value })} style={{ ...ta, marginBottom: 0 }} />
                 </div>
-
                 <div style={cardStyle}>
                   <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Video de inicio</h2>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '20px', fontWeight: 300, lineHeight: 1.6 }}>El video reemplaza la imagen de fondo en la sección de inicio.</p>
-
                   {(data.videoBase64 || data.videoUrl) && (
                     <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '14px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: 'white', fontWeight: 500 }}>
@@ -318,17 +314,14 @@ const AdminPanel = ({ onLogout }: Props) => {
                       <button onClick={() => setData({ ...data, videoBase64: '', videoUrl: '' })} style={{ padding: '6px 12px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', fontFamily: 'Inter, sans-serif', borderRadius: '2px' }}>Quitar</button>
                     </div>
                   )}
-
                   <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '12px' }}>
                     <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#aaa', fontWeight: 500, marginBottom: '4px', letterSpacing: '1px' }}>OPCIÓN 1 — SUBIR DESDE EL COMPUTADOR</p>
                     <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginBottom: '14px', fontWeight: 300 }}>Máximo 50MB. Formatos: MP4, MOV, WEBM.</p>
                     <input type="file" accept="video/*" ref={videoRef} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) subirVideoPC(f) }} />
-                    <button className="upload-btn" onClick={() => videoRef.current?.click()} disabled={subiendoVideo}
-                      style={{ padding: '10px 20px', fontSize: '11px', letterSpacing: '1px', width: '100%' }}>
+                    <button className="upload-btn" onClick={() => videoRef.current?.click()} disabled={subiendoVideo} style={{ padding: '10px 20px', fontSize: '11px', letterSpacing: '1px', width: '100%' }}>
                       {subiendoVideo ? 'PROCESANDO...' : '↑ SELECCIONAR VIDEO'}
                     </button>
                   </div>
-
                   <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px' }}>
                     <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#aaa', fontWeight: 500, marginBottom: '4px', letterSpacing: '1px' }}>OPCIÓN 2 — URL DE GOOGLE DRIVE</p>
                     <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginBottom: '14px', fontWeight: 300 }}>
@@ -368,29 +361,21 @@ const AdminPanel = ({ onLogout }: Props) => {
                 <div style={cardStyle}>
                   <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Coaches</h2>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '20px', fontWeight: 300, lineHeight: 1.6 }}>
-                    Agrega los coaches del gimnasio con su foto, nombre y descripción. Solo aparecerán en la web los que agregues aquí.
+                    Agrega los coaches del gimnasio con su foto, nombre y descripción.
                   </p>
-
                   {data.profesores.length === 0 && (
                     <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '24px', textAlign: 'center', marginBottom: '16px' }}>
                       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#444', fontWeight: 300 }}>No hay coaches agregados aún.</p>
                       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#333', marginTop: '4px', fontWeight: 300 }}>Haz clic en "+ Agregar Coach" para comenzar.</p>
                     </div>
                   )}
-
                   {data.profesores.map((prof, i) => (
                     <div key={i} style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '12px' }}>
-                      {/* Header card coach */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#aaa', fontWeight: 500 }}>
-                          {prof.nombre || 'Nuevo Coach'}
-                        </p>
+                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#aaa', fontWeight: 500 }}>{prof.nombre || 'Nuevo Coach'}</p>
                         <button className="btn-eliminar" onClick={() => eliminarProfesor(i)}>✕ Eliminar</button>
                       </div>
-
-                      {/* Foto + nombre en fila */}
                       <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap' }}>
-                        {/* Foto */}
                         <div style={{ flexShrink: 0 }}>
                           <div style={{ width: '100px', height: '100px', backgroundColor: '#1a1a1a', border: `1px solid ${BORDER}`, borderRadius: '4px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
                             {prof.foto
@@ -406,25 +391,17 @@ const AdminPanel = ({ onLogout }: Props) => {
                             <button onClick={() => actualizarProfesor(i, 'foto', '')} style={{ width: '100px', padding: '5px 0', marginTop: '4px', background: 'transparent', border: '1px solid #2a1a1a', color: '#ff6b6b', fontSize: '10px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'block', textAlign: 'center', borderRadius: '2px' }}>QUITAR FOTO</button>
                           )}
                         </div>
-
-                        {/* Nombre */}
                         <div style={{ flex: 1, minWidth: '160px' }}>
                           <span style={lbl}>NOMBRE</span>
                           <input value={prof.nombre} onChange={e => actualizarProfesor(i, 'nombre', e.target.value)} placeholder="Nombre del coach" style={{ ...inp, marginBottom: 0 }} />
                         </div>
                       </div>
-
-                      {/* Descripción */}
                       <span style={lbl}>DESCRIPCIÓN</span>
-                      <textarea
-                        value={prof.descripcion}
-                        onChange={e => actualizarProfesor(i, 'descripcion', e.target.value)}
+                      <textarea value={prof.descripcion} onChange={e => actualizarProfesor(i, 'descripcion', e.target.value)}
                         placeholder="Ej: Especialista en entrenamiento de fuerza con 5 años de experiencia..."
-                        style={{ ...ta, marginBottom: 0, minHeight: '72px' }}
-                      />
+                        style={{ ...ta, marginBottom: 0, minHeight: '72px' }} />
                     </div>
                   ))}
-
                   <button className="btn-agregar" onClick={agregarProfesor} style={{ width: '100%', padding: '14px', fontSize: '12px', letterSpacing: '2px', marginTop: '8px', border: '1px solid white', color: 'white' }}>
                     + Agregar Coach
                   </button>
@@ -491,6 +468,49 @@ const AdminPanel = ({ onLogout }: Props) => {
                   <input value={data.horarioSemana} onChange={e => setData({ ...data, horarioSemana: e.target.value })} style={inp} />
                   <span style={lbl}>SÁBADOS</span>
                   <input value={data.horarioSabado} onChange={e => setData({ ...data, horarioSabado: e.target.value })} style={{ ...inp, marginBottom: 0 }} />
+                </div>
+              </div>
+            )}
+
+            {/* TÉRMINOS Y CONDICIONES */}
+            {seccion === 'terminos' && (
+              <div style={{ maxWidth: '560px' }}>
+                <div style={cardStyle}>
+                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Términos y Condiciones</h2>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '20px', fontWeight: 300, lineHeight: 1.6 }}>
+                    Sube el documento PDF con los términos y condiciones del gimnasio. Este archivo se mostrará a los visitantes cuando hagan clic en el enlace del footer.
+                  </p>
+                  {data.terminosPdf ? (
+                    <div style={{ backgroundColor: '#0a1a0a', border: '1px solid #4caf50', borderRadius: '2px', padding: '16px', marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '20px' }}>📄</span>
+                          <div>
+                            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#4caf50', fontWeight: 600 }}>PDF cargado correctamente</p>
+                            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginTop: '2px', fontWeight: 300 }}>El documento está disponible en el sitio web</p>
+                          </div>
+                        </div>
+                        <button onClick={() => setData({ ...data, terminosPdf: '' })}
+                          style={{ padding: '6px 14px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', fontFamily: 'Inter, sans-serif', borderRadius: '2px', whiteSpace: 'nowrap' }}>
+                          Quitar PDF
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '16px' }}>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginBottom: '4px', fontWeight: 300 }}>No hay ningún PDF cargado aún.</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#333', fontWeight: 300 }}>Sube un archivo para que aparezca en el sitio web.</p>
+                    </div>
+                  )}
+                  <input type="file" accept="application/pdf" ref={terminosRef} style={{ display: 'none' }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) subirTerminosPdf(f) }} />
+                  <button className="upload-btn" onClick={() => terminosRef.current?.click()}
+                    style={{ width: '100%', padding: '14px', fontSize: '11px', letterSpacing: '2px', border: `1px solid ${BORDER}` }}>
+                    {data.terminosPdf ? '↑ REEMPLAZAR PDF' : '↑ SUBIR PDF'}
+                  </button>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', color: '#333', marginTop: '12px', fontWeight: 300, textAlign: 'center' }}>
+                    Formato: PDF · Máximo 10MB
+                  </p>
                 </div>
               </div>
             )}
