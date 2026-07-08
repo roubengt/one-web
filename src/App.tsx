@@ -169,13 +169,49 @@ const App = () => {
 
   const videoSrc = (webData as any).videoBase64 || (webData as any).videoUrl || ''
   if (vista === 'web' && cargandoWeb) return (
-    <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ border: '2px solid white', padding: '6px 18px', display: 'inline-block', marginBottom: '16px' }}>
-          <span style={{ fontFamily: "'Impact', sans-serif", fontSize: '22px', color: 'white', letterSpacing: '4px', fontWeight: 900 }}>ONE</span>
+    <div style={{
+      backgroundColor: '#000', minHeight: '100vh',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexDirection: 'column', position: 'relative', overflow: 'hidden'
+    }}>
+      <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80" alt="" style={{
+        position: 'absolute', inset: 0, width: '100%', height: '100%',
+        objectFit: 'cover', filter: 'brightness(0.15)', opacity: 0.6
+      }} />
+      <div style={{
+        position: 'relative', zIndex: 1, textAlign: 'center',
+        animation: 'fadeInWelcome 1.2s ease forwards'
+      }}>
+        <h1 style={{
+          fontFamily: "'Impact', 'Arial Black', sans-serif",
+          fontSize: 'clamp(80px, 18vw, 180px)', color: 'white',
+          letterSpacing: '0.15em', lineHeight: 0.9, fontWeight: 900,
+          marginBottom: '16px'
+        }}>ONE</h1>
+        <p style={{
+          fontFamily: "'Inter', sans-serif", fontSize: 'clamp(9px, 1.2vw, 12px)',
+          letterSpacing: '0.5em', color: '#999', textTransform: 'uppercase',
+          fontWeight: 500, marginBottom: '48px'
+        }}>YOUR EVOLUTION</p>
+        <div style={{
+          width: '40px', height: '1px', backgroundColor: '#333',
+          margin: '0 auto 24px', position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{
+            width: '100%', height: '100%', backgroundColor: '#fff',
+            animation: 'loadBar 1.5s ease-in-out infinite'
+          }} />
         </div>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', letterSpacing: '4px', color: '#555', fontWeight: 300 }}>CARGANDO...</p>
+        <p style={{
+          fontFamily: "'Inter', sans-serif", fontSize: '10px',
+          letterSpacing: '6px', color: '#444', fontWeight: 300,
+          textTransform: 'uppercase'
+        }}>BIENVENIDO</p>
       </div>
+      <style>{`
+        @keyframes fadeInWelcome { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes loadBar { 0% { transform: translateX(-100%); } 50% { transform: translateX(0); } 100% { transform: translateX(100%); } }
+      `}</style>
     </div>
   )
 
