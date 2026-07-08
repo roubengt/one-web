@@ -52,6 +52,7 @@ const App = () => {
   const [seccionVisible, setSeccionVisible] = useState<Record<string, boolean>>({})
   const [wspHover, setWspHover]         = useState(false)
   const [modalTerminos, setModalTerminos] = useState(false)
+  const [cargandoWeb, setCargandoWeb] = useState(true)
   const observerRef = useRef<IntersectionObserver | null>(null)
 
   useEffect(() => {
@@ -96,7 +97,7 @@ const App = () => {
         } catch {}
       }
     }
-    cargar()
+    cargar().finally(() => setCargandoWeb(false))
   }, [])
 
   useEffect(() => {
@@ -167,6 +168,16 @@ const App = () => {
   })
 
   const videoSrc = (webData as any).videoBase64 || (webData as any).videoUrl || ''
+  if (vista === 'web' && cargandoWeb) return (
+    <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ border: '2px solid white', padding: '6px 18px', display: 'inline-block', marginBottom: '16px' }}>
+          <span style={{ fontFamily: "'Impact', sans-serif", fontSize: '22px', color: 'white', letterSpacing: '4px', fontWeight: 900 }}>ONE</span>
+        </div>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', letterSpacing: '4px', color: '#555', fontWeight: 300 }}>CARGANDO...</p>
+      </div>
+    </div>
+  )
 
   return (
     <div style={{ backgroundColor: BG, color: 'white', overflowX: 'hidden' }}>
