@@ -4,7 +4,6 @@ import AdminPanel from './AdminPanel'
 
 const BG    = '#0a0a0a'
 const BG2   = '#0a0a0a'
-const CARD  = '#141414'
 const BORDER = '#2a2a2a'
 
 const FUENTES: Record<string, string> = {
