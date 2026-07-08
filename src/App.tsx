@@ -3,7 +3,7 @@ import AdminLogin from './AdminLogin'
 import AdminPanel from './AdminPanel'
 
 const BG    = '#0a0a0a'
-const BG2   = '#0d0d0d'
+const BG2   = '#0a0a0a'
 const CARD  = '#141414'
 const BORDER = '#2a2a2a'
 
@@ -178,7 +178,7 @@ const App = () => {
         ::-webkit-scrollbar-track { background: #0a0a0a; }
         ::-webkit-scrollbar-thumb { background: #fff; }
         .plan-card { transition: all 0.3s; }
-        .plan-card:hover { border-color: #fff !important; transform: translateY(-6px) !important; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .plan-card:hover { border-color: #444 !important; transform: translateY(-6px) !important; box-shadow: 0 12px 40px rgba(0,0,0,0.5) !important; }
         .prof-card { transition: all 0.3s; cursor: default; }
         .prof-card:hover { border-color: #444 !important; transform: translateY(-6px); box-shadow: 0 12px 40px rgba(0,0,0,0.5) !important; }
         .prof-card:hover .prof-img { filter: grayscale(0%) brightness(0.9) !important; transform: scale(1.03); }
@@ -292,8 +292,8 @@ const App = () => {
           <span style={{ color: '#fff', fontSize: '18px', opacity: 0.6 }}>↓</span>
         </div>
       </section>
-      
-{/* NOSOTROS */}
+
+      {/* NOSOTROS */}
       <section id="nosotros" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
         <div style={{ display: 'flex', width: '100%', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 50%', minHeight: '60vh', position: 'relative', minWidth: '280px', overflow: 'hidden' }}>
@@ -330,16 +330,25 @@ const App = () => {
           <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#bbb', marginBottom: '20px', fontWeight: 500 }}>AJUSTADOS A TU MEDIDA</p>
           <h2 style={{ ...outline('clamp(60px, 12vw, 140px)') }}>PLANES</h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', maxWidth: '1200px', margin: '0 auto' }}>
           {webData.planes.map((plan, i) => (
-            <div key={i} className="plan-card" style={{ backgroundColor: i % 2 === 0 ? CARD : '#111', border: `1px solid ${BORDER}`, padding: '40px 32px', opacity: seccionVisible['planes'] ? 1 : 0, transform: seccionVisible['planes'] ? 'translateY(0)' : 'translateY(40px)', transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s, border-color 0.3s, box-shadow 0.3s` }}>
-              <h3 style={{ ...T, fontSize: '36px', color: 'white', marginBottom: '10px' }}>{plan.nombre}</h3>
-              <p style={{ ...B, fontSize: '14px', color: '#ccc', marginBottom: '32px', lineHeight: 1.7, fontWeight: 400 }}>{plan.descripcion}</p>
+            <div key={i} className="plan-card" style={{
+              backgroundColor: '#111',
+              border: '1px solid #222',
+              borderRadius: '16px',
+              padding: '40px 32px',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+              opacity: seccionVisible['planes'] ? 1 : 0,
+              transform: seccionVisible['planes'] ? 'translateY(0)' : 'translateY(40px)',
+              transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s, border-color 0.3s, box-shadow 0.3s`
+            }}>
+              <h3 style={{ ...T, fontSize: '32px', color: 'white', marginBottom: '10px' }}>{plan.nombre}</h3>
+              <p style={{ ...B, fontSize: '14px', color: '#bbb', marginBottom: '32px', lineHeight: 1.8, fontWeight: 300 }}>{plan.descripcion}</p>
               <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '24px' }}>
                 {plan.precios.map((p, j) => (
                   <div key={j} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: j < plan.precios.length - 1 ? '1px solid #1a1a1a' : 'none' }}>
-                    <span style={{ ...B, fontSize: '13px', color: '#ccc', letterSpacing: '1px', fontWeight: 400 }}>{p.frecuencia}</span>
-                    <span style={{ ...T, fontSize: '28px', color: 'white', letterSpacing: '-1px' }}>{p.valor}</span>
+                    <span style={{ ...B, fontSize: '14px', color: '#bbb', letterSpacing: '0.5px', fontWeight: 300 }}>{p.frecuencia}</span>
+                    <span style={{ ...T, fontSize: '26px', color: 'white', letterSpacing: '-1px' }}>{p.valor}</span>
                   </div>
                 ))}
               </div>
@@ -347,7 +356,7 @@ const App = () => {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: '64px', ...fadeIn('planes', 0.4) }}>
-          <a href="https://wa.me/56956723743" target="_blank" rel="noreferrer" className="btn-hover" style={{ display: 'inline-block', backgroundColor: 'transparent', border: '1px solid white', color: 'white', padding: '18px 52px', fontSize: '11px', letterSpacing: '4px', textDecoration: 'none', ...B, fontWeight: 500 }}>
+          <a href="https://wa.me/56956723743" target="_blank" rel="noreferrer" className="btn-hover" style={{ display: 'inline-block', backgroundColor: 'transparent', border: '1px solid white', color: 'white', padding: '18px 52px', fontSize: '11px', letterSpacing: '4px', textDecoration: 'none', borderRadius: '8px', ...B, fontWeight: 500 }}>
             QUIERO SER PARTE DE ONE
           </a>
         </div>
@@ -422,14 +431,23 @@ const App = () => {
             En ONE buscamos organizarnos mejor y cuidar tu espacio, el que con mucho profesionalismo compartimos en comunidad.
           </p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px', maxWidth: '1200px', margin: '0 auto' }}>
           {webData.reglamento.map((reg, i) => (
-            <div key={i} style={{ backgroundColor: i % 2 === 0 ? CARD : '#111', padding: '40px 36px', borderTop: `1px solid ${BORDER}`, opacity: seccionVisible['reglamento'] ? 1 : 0, transform: seccionVisible['reglamento'] ? 'translateY(0)' : 'translateY(30px)', transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s` }}>
+            <div key={i} style={{
+              backgroundColor: '#111',
+              border: '1px solid #222',
+              borderRadius: '16px',
+              padding: '40px 36px',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+              opacity: seccionVisible['reglamento'] ? 1 : 0,
+              transform: seccionVisible['reglamento'] ? 'translateY(0)' : 'translateY(30px)',
+              transition: `opacity 0.6s ease ${i * 0.1}s, transform 0.6s ease ${i * 0.1}s`
+            }}>
               <h3 style={{ ...T, fontSize: '22px', color: 'white', marginBottom: '28px', letterSpacing: '1px' }}>{reg.titulo}</h3>
               <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
                 {reg.items.map((item, j) => (
-                  <li key={j} style={{ ...B, fontSize: '13px', color: '#ccc', lineHeight: 1.9, fontWeight: 400, paddingBottom: '12px', marginBottom: '12px', borderBottom: j < reg.items.length - 1 ? '1px solid #1a1a1a' : 'none', paddingLeft: '16px', position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: 0, color: '#888' }}>—</span>{item}
+                  <li key={j} style={{ ...B, fontSize: '14px', color: '#bbb', lineHeight: 1.9, fontWeight: 300, paddingBottom: '12px', marginBottom: '12px', borderBottom: j < reg.items.length - 1 ? '1px solid #1a1a1a' : 'none', paddingLeft: '16px', position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 0, color: '#555' }}>—</span>{item}
                   </li>
                 ))}
               </ul>
