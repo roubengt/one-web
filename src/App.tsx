@@ -133,7 +133,7 @@ const App = () => {
       if (el) observerRef.current?.observe(el)
     })
     return () => observerRef.current?.disconnect()
-  }, [])
+  }, [cargandoWeb])
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
