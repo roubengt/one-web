@@ -480,7 +480,7 @@ const App = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', maxWidth: '1100px', margin: '0 auto' }}>
           {[
             'https://www.instagram.com/p/DUtMtGUAOka/embed/',
-            'https://www.instagram.com/p/DVmdNpAAAOr/embed/',
+            'https://www.instagram.com/p/DajXKmTkcwu/?img_index=1',
             'https://www.instagram.com/p/DaY7WPEgNDU/embed/',
           ].map((url, i) => (
             <div key={i} style={{
