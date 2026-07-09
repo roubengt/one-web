@@ -422,7 +422,7 @@ const AdminPanel = ({ onLogout }: Props) => {
                     <span style={lbl}>NOMBRE</span>
                     <input value={plan.nombre} onChange={e => actualizarPlan(pi, 'nombre', e.target.value)} style={inp} />
                     <span style={lbl}>DESCRIPCIÓN</span>
-                    <input value={plan.descripcion} onChange={e => actualizarPlan(pi, 'descripcion', e.target.value)} style={inp} />
+                    <textarea value={plan.descripcion} onChange={e => actualizarPlan(pi, 'descripcion', e.target.value)} style={{ ...inp, minHeight: '72px', resize: 'vertical', fontFamily: 'inherit' }} />
                     <span style={lbl}>PRECIOS</span>
                     {plan.precios.map((p, ji) => (
                       <div key={ji} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
