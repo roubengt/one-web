@@ -26,7 +26,6 @@ const defaultData = {
   terminosPdf:     '' as string,
   imagenInicio:    '',
   imagenNosotros:  '',
-  instagramPosts:  [] as string[],
   profesores:     [] as { nombre: string; foto: string; descripcion: string }[],
   planes: [
     { nombre: 'PLAN PERSONAL', descripcion: 'Sesiones uno a uno con tu Coach', precios: [{ frecuencia: '2 veces x semana', valor: '$230.000' }, { frecuencia: '3 veces x semana', valor: '$260.000' }, { frecuencia: '4 veces x semana', valor: '$290.000' }] },

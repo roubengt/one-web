@@ -25,7 +25,6 @@ const defaultData = {
   terminosPdf:     '' as string,
   imagenInicio:    '',
   imagenNosotros:  '',
-  instagramPosts:  [] as string[],
   profesores:    [] as { nombre: string; foto: string; descripcion: string }[],
   planes: [
     { nombre: 'PLAN PERSONAL', descripcion: 'Sesiones uno a uno con tu Coach', precios: [{ frecuencia: '2 veces x semana', valor: '$230.000' }, { frecuencia: '3 veces x semana', valor: '$260.000' }, { frecuencia: '4 veces x semana', valor: '$290.000' }] },
@@ -177,7 +176,6 @@ const AdminPanel = ({ onLogout }: Props) => {
     { id: 'profesores', label: 'Profesores',               icon: '👤' },
     { id: 'reglamento', label: 'Reglamento',               icon: '📄' },
     { id: 'horarios',   label: 'Horarios',                 icon: '🕐' },
-    { id: 'instagram',  label: 'Instagram',                icon: '📷' },
     { id: 'terminos',   label: 'Términos y Condiciones',   icon: '📃' },
     { id: 'cuenta',     label: 'Mi Cuenta',                icon: '🔑' },
   ]
