@@ -498,66 +498,6 @@ const AdminPanel = ({ onLogout }: Props) => {
                 ))}
               </div>
             )}
-
-            {/* INSTAGRAM */}
-            {seccion === 'instagram' && (
-              <div style={{ maxWidth: '640px' }}>
-                <div style={cardStyle}>
-                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Publicaciones de Instagram</h2>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '20px', fontWeight: 300, lineHeight: 1.6 }}>
-                    Agrega hasta 3 enlaces de publicaciones de Instagram para mostrar en el sitio web. Copia el enlace de la publicación desde Instagram.
-                  </p>
-                  {((data as any).instagramPosts || []).length === 0 && (
-                    <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '24px', textAlign: 'center', marginBottom: '16px' }}>
-                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#444', fontWeight: 300 }}>No hay publicaciones agregadas aún.</p>
-                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#333', marginTop: '4px', fontWeight: 300 }}>Haz clic en "+ Agregar publicación" para comenzar.</p>
-                    </div>
-                  )}
-                  {((data as any).instagramPosts || []).map((url: string, i: number) => (
-                    <div key={i} style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#aaa', fontWeight: 500 }}>Publicación {i + 1}</p>
-                        <button className="btn-eliminar" onClick={() => {
-                          const posts = [...((data as any).instagramPosts || [])]
-                          posts.splice(i, 1)
-                          setData({ ...data, instagramPosts: posts } as any)
-                        }}>✕ Eliminar</button>
-                      </div>
-                      <span style={lbl}>ENLACE DE INSTAGRAM</span>
-                      <input
-                        value={url}
-                        onChange={e => {
-                          const posts = [...((data as any).instagramPosts || [])]
-                          posts[i] = e.target.value
-                          setData({ ...data, instagramPosts: posts } as any)
-                        }}
-                        placeholder="https://www.instagram.com/p/CODIGO_POST/"
-                        style={{ ...inp, marginBottom: '8px' }}
-                      />
-                      {url && (
-                        <div style={{ borderRadius: '8px', overflow: 'hidden', border: `1px solid ${BORDER}` }}>
-                          <iframe
-                            src={url.replace(/\/$/, '').replace(/\/\?.*$/, '') + '/embed/'}
-                            style={{ width: '100%', minHeight: '300px', border: 'none', display: 'block' }}
-                            scrolling="no"
-                            title={`Preview ${i + 1}`}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {((data as any).instagramPosts || []).length < 3 && (
-                    <button className="btn-agregar" onClick={() => {
-                      const posts = [...((data as any).instagramPosts || []), '']
-                      setData({ ...data, instagramPosts: posts } as any)
-                    }} style={{ width: '100%', padding: '14px', fontSize: '12px', letterSpacing: '2px', marginTop: '8px', border: '1px solid white', color: 'white' }}>
-                      + Agregar publicación ({((data as any).instagramPosts || []).length}/3)
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* HORARIOS */}
             {seccion === 'horarios' && (
               <div style={{ maxWidth: '560px' }}>
