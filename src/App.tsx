@@ -99,7 +99,7 @@ const App = () => {
         } catch {}
       }
     }
-    const timeout = setTimeout(() => setCargandoWeb(false), 3000)
+    const timeout = setTimeout(() => setCargandoWeb(false), 4000)
     cargar().finally(() => { clearTimeout(timeout); setCargandoWeb(false) })
   }, [])
 
@@ -177,42 +177,61 @@ const App = () => {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', position: 'relative', overflow: 'hidden'
     }}>
-      <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80" alt="" style={{
+      <img src="https://lh3.googleusercontent.com/d/1Sh61hFsQP9LnnD3KIoSO6K-WBkdN4ZG4" alt="" style={{
         position: 'absolute', inset: 0, width: '100%', height: '100%',
-        objectFit: 'cover', filter: 'brightness(0.15)', opacity: 0.6
+        objectFit: 'cover', filter: 'brightness(0.1)', opacity: 0,
+        animation: 'bgReveal 2s ease forwards 0.3s'
       }} />
       <div style={{
         position: 'relative', zIndex: 1, textAlign: 'center',
-        animation: 'fadeInWelcome 1.2s ease forwards'
+        opacity: 0, animation: 'contentFade 1s ease forwards 0.5s'
       }}>
-        <h1 style={{
-          fontFamily: "'Impact', 'Arial Black', sans-serif",
-          fontSize: 'clamp(80px, 18vw, 180px)', color: 'white',
-          letterSpacing: '0.15em', lineHeight: 0.9, fontWeight: 900,
-          marginBottom: '16px'
-        }}>ONE</h1>
-        <p style={{
-          fontFamily: "'Inter', sans-serif", fontSize: 'clamp(9px, 1.2vw, 12px)',
-          letterSpacing: '0.5em', color: '#999', textTransform: 'uppercase',
-          fontWeight: 500, marginBottom: '48px'
-        }}>YOUR EVOLUTION</p>
+        <div style={{ position: 'relative', display: 'inline-block', marginBottom: '32px' }}>
+          <h1 style={{
+            fontFamily: "'Impact', 'Arial Black', sans-serif",
+            fontSize: 'clamp(90px, 20vw, 200px)', color: 'transparent',
+            WebkitTextStroke: '2px rgba(255,255,255,0.15)',
+            letterSpacing: '0.15em', lineHeight: 0.9, fontWeight: 900,
+          }}>ONE</h1>
+          <h1 style={{
+            fontFamily: "'Impact', 'Arial Black', sans-serif",
+            fontSize: 'clamp(90px, 20vw, 200px)', color: 'white',
+            letterSpacing: '0.15em', lineHeight: 0.9, fontWeight: 900,
+            position: 'absolute', inset: 0,
+            clipPath: 'inset(0 100% 0 0)',
+            animation: 'textReveal 1.5s ease forwards 0.8s'
+          }}>ONE</h1>
+        </div>
+        <div style={{ overflow: 'hidden', marginBottom: '40px' }}>
+          <p style={{
+            fontFamily: "'Inter', sans-serif", fontSize: 'clamp(9px, 1.2vw, 12px)',
+            letterSpacing: '0.5em', color: '#999', textTransform: 'uppercase',
+            fontWeight: 500, opacity: 0,
+            animation: 'slideUp 0.8s ease forwards 1.6s'
+          }}>YOUR EVOLUTION</p>
+        </div>
         <div style={{
-          width: '40px', height: '1px', backgroundColor: '#333',
-          margin: '0 auto 24px', position: 'relative', overflow: 'hidden'
+          width: '120px', height: '1px', backgroundColor: '#1a1a1a',
+          margin: '0 auto 20px', borderRadius: '1px', overflow: 'hidden',
+          opacity: 0, animation: 'contentFade 0.5s ease forwards 2s'
         }}>
           <div style={{
             width: '100%', height: '100%', backgroundColor: '#fff',
-            animation: 'loadBar 1.5s ease-in-out infinite'
+            animation: 'loadBar 1.2s ease-in-out infinite'
           }} />
         </div>
         <p style={{
-          fontFamily: "'Inter', sans-serif", fontSize: '10px',
-          letterSpacing: '6px', color: '#444', fontWeight: 300,
-          textTransform: 'uppercase'
+          fontFamily: "'Inter', sans-serif", fontSize: '9px',
+          letterSpacing: '6px', color: '#333', fontWeight: 300,
+          textTransform: 'uppercase', opacity: 0,
+          animation: 'contentFade 0.5s ease forwards 2.2s'
         }}>BIENVENIDO</p>
       </div>
       <style>{`
-        @keyframes fadeInWelcome { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bgReveal { from { opacity: 0; transform: scale(1.1); } to { opacity: 1; transform: scale(1); } }
+        @keyframes contentFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes textReveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0% 0 0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes loadBar { 0% { transform: translateX(-100%); } 50% { transform: translateX(0); } 100% { transform: translateX(100%); } }
       `}</style>
     </div>
@@ -329,7 +348,7 @@ const App = () => {
             <iframe src={videoSrc} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '177.78vh', height: '100vh', minWidth: '100%', minHeight: '56.25vw', border: 'none', pointerEvents: 'none' }} allow="autoplay; fullscreen" title="ONE Your Evolution" />
           )
         ) : (
-          <img src={(webData as any).imagenInicio || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80"} alt="ONE" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.25)' }} />
+          <img src="https://lh3.googleusercontent.com/d/1Sh61hFsQP9LnnD3KIoSO6K-WBkdN4ZG4" alt="ONE" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.25)' }} />
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.5) 100%)', zIndex: 1 }} />
         {!videoSrc && (
@@ -347,7 +366,7 @@ const App = () => {
       <section id="nosotros" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
         <div style={{ display: 'flex', width: '100%', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 50%', minHeight: '60vh', position: 'relative', minWidth: '280px', overflow: 'hidden' }}>
-            <img src={(webData as any).imagenNosotros || "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=900&q=80"} alt="Sobre ONE" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.25)', transition: 'transform 0.8s ease', transform: seccionVisible['nosotros'] ? 'scale(1)' : 'scale(1.08)' }} />
+            <img src="https://lh3.googleusercontent.com/d/1pFc__7aQhMOJcuJAfuCryOXLtsKwDAvo" alt="Sobre ONE" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.25)', transition: 'transform 0.8s ease', transform: seccionVisible['nosotros'] ? 'scale(1)' : 'scale(1.08)' }} />
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <h2 style={{ ...outline('clamp(60px, 10vw, 130px)', '2px rgba(255,255,255,0.2)'), textAlign: 'center', ...fadeIn('nosotros', 0.2) }}>SOBRE<br />ONE</h2>
             </div>
@@ -553,7 +572,7 @@ const App = () => {
 
       {/* CONTACTO */}
       <section id="contacto" style={{ minHeight: '80vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-        <img src={(webData as any).imagenInicio || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80"} alt="Contacto" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.1)' }} />
+        <img src="https://lh3.googleusercontent.com/d/1Sh61hFsQP9LnnD3KIoSO6K-WBkdN4ZG4" alt="Contacto" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.1)' }} />
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '60px 24px' }}>
           <p style={{ ...B, fontSize: '10px', letterSpacing: '6px', color: '#bbb', marginBottom: '24px', fontWeight: 500, ...fadeIn('contacto') }}>ÚNETE A LA COMUNIDAD</p>
           <h2 style={{ ...outline('clamp(60px, 14vw, 160px)'), margin: '0 0 52px', ...fadeIn('contacto', 0.2) }}>SÍGUENOS</h2>
