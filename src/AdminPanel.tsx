@@ -20,9 +20,12 @@ const defaultData = {
   horarioSemana: 'Lunes a Viernes: 6:30 a 21:00 hrs.',
   horarioSabado: 'Sábados: 10:00 a 13:00 hrs. (solo recuperativos)',
   fuenteTitulos: 'Impact',
-  videoUrl:      '',
-  videoBase64:   '',
-  terminosPdf:   '' as string,
+  videoUrl:        '',
+  videoBase64:     '',
+  terminosPdf:     '' as string,
+  imagenInicio:    '',
+  imagenNosotros:  '',
+  instagramPosts:  [] as string[],
   profesores:    [] as { nombre: string; foto: string; descripcion: string }[],
   planes: [
     { nombre: 'PLAN PERSONAL', descripcion: 'Sesiones uno a uno con tu Coach', precios: [{ frecuencia: '2 veces x semana', valor: '$230.000' }, { frecuencia: '3 veces x semana', valor: '$260.000' }, { frecuencia: '4 veces x semana', valor: '$290.000' }] },
@@ -58,6 +61,8 @@ const AdminPanel = ({ onLogout }: Props) => {
   const fileRefs = useRef<(HTMLInputElement | null)[]>([])
   const videoRef = useRef<HTMLInputElement | null>(null)
   const terminosRef = useRef<HTMLInputElement | null>(null)
+  const imagenInicioRef = useRef<HTMLInputElement | null>(null)
+  const imagenNosotrosRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     const cargar = async () => {
@@ -172,6 +177,7 @@ const AdminPanel = ({ onLogout }: Props) => {
     { id: 'profesores', label: 'Profesores',               icon: '👤' },
     { id: 'reglamento', label: 'Reglamento',               icon: '📄' },
     { id: 'horarios',   label: 'Horarios',                 icon: '🕐' },
+    { id: 'instagram',  label: 'Instagram',                icon: '📷' },
     { id: 'terminos',   label: 'Términos y Condiciones',   icon: '📃' },
     { id: 'cuenta',     label: 'Mi Cuenta',                icon: '🔑' },
   ]
@@ -309,7 +315,7 @@ const AdminPanel = ({ onLogout }: Props) => {
                   {(data.videoBase64 || data.videoUrl) && (
                     <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '14px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                       <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: 'white', fontWeight: 500 }}>
-                        {data.videoBase64 ? '✓ Video subido desde PC' : '✓ Video de Google Drive'}
+                        {data.videoBase64 ? '✔ Video subido desde PC' : '✔ Video de Google Drive'}
                       </p>
                       <button onClick={() => setData({ ...data, videoBase64: '', videoUrl: '' })} style={{ padding: '6px 12px', backgroundColor: '#1a0a0a', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px', fontFamily: 'Inter, sans-serif', borderRadius: '2px' }}>Quitar</button>
                     </div>
@@ -329,6 +335,40 @@ const AdminPanel = ({ onLogout }: Props) => {
                     </p>
                     <input value={data.videoUrl || ''} onChange={e => setData({ ...data, videoUrl: e.target.value, videoBase64: '' })}
                       placeholder="https://drive.google.com/file/d/TU_ID/preview" style={{ ...inp, marginBottom: 0 }} />
+                  </div>
+                </div>
+                <div style={cardStyle}>
+                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Imágenes del sitio</h2>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '20px', fontWeight: 300, lineHeight: 1.6 }}>Personaliza las imágenes de fondo de las secciones principales.</p>
+
+                  <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '16px' }}>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#aaa', fontWeight: 500, marginBottom: '4px', letterSpacing: '1px' }}>IMAGEN DE INICIO</p>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginBottom: '14px', fontWeight: 300 }}>Se muestra de fondo en la sección de bienvenida cuando no hay video configurado.</p>
+                    {(data as any).imagenInicio && (
+                      <div style={{ marginBottom: '12px', position: 'relative' }}>
+                        <img src={(data as any).imagenInicio} alt="Inicio" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '2px', filter: 'brightness(0.5)' }} />
+                        <button onClick={() => setData({ ...data, imagenInicio: '' } as any)} style={{ position: 'absolute', top: '8px', right: '8px', padding: '4px 10px', backgroundColor: 'rgba(0,0,0,0.7)', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '10px', fontFamily: 'Inter, sans-serif', borderRadius: '2px' }}>✕</button>
+                      </div>
+                    )}
+                    <input type="file" accept="image/*" ref={imagenInicioRef} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = ev => setData({ ...data, imagenInicio: ev.target?.result as string } as any); r.readAsDataURL(f) } }} />
+                    <button className="upload-btn" onClick={() => imagenInicioRef.current?.click()} style={{ padding: '10px 20px', fontSize: '11px', letterSpacing: '1px', width: '100%' }}>
+                      {(data as any).imagenInicio ? '↑ CAMBIAR IMAGEN' : '↑ SUBIR IMAGEN'}
+                    </button>
+                  </div>
+
+                  <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px' }}>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#aaa', fontWeight: 500, marginBottom: '4px', letterSpacing: '1px' }}>IMAGEN DE QUIÉNES SOMOS</p>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#555', marginBottom: '14px', fontWeight: 300 }}>Se muestra en la sección lateral de Quiénes Somos.</p>
+                    {(data as any).imagenNosotros && (
+                      <div style={{ marginBottom: '12px', position: 'relative' }}>
+                        <img src={(data as any).imagenNosotros} alt="Nosotros" style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '2px', filter: 'brightness(0.5)' }} />
+                        <button onClick={() => setData({ ...data, imagenNosotros: '' } as any)} style={{ position: 'absolute', top: '8px', right: '8px', padding: '4px 10px', backgroundColor: 'rgba(0,0,0,0.7)', border: '1px solid #ff6b6b', color: '#ff6b6b', cursor: 'pointer', fontSize: '10px', fontFamily: 'Inter, sans-serif', borderRadius: '2px' }}>✕</button>
+                      </div>
+                    )}
+                    <input type="file" accept="image/*" ref={imagenNosotrosRef} style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = ev => setData({ ...data, imagenNosotros: ev.target?.result as string } as any); r.readAsDataURL(f) } }} />
+                    <button className="upload-btn" onClick={() => imagenNosotrosRef.current?.click()} style={{ padding: '10px 20px', fontSize: '11px', letterSpacing: '1px', width: '100%' }}>
+                      {(data as any).imagenNosotros ? '↑ CAMBIAR IMAGEN' : '↑ SUBIR IMAGEN'}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -456,6 +496,65 @@ const AdminPanel = ({ onLogout }: Props) => {
                     <button className="btn-agregar" onClick={() => agregarReglItem(ri)} style={{ padding: '8px 16px', fontSize: '11px', letterSpacing: '1px', marginTop: '8px' }}>+ Agregar regla</button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* INSTAGRAM */}
+            {seccion === 'instagram' && (
+              <div style={{ maxWidth: '640px' }}>
+                <div style={cardStyle}>
+                  <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', fontWeight: 600, color: 'white', marginBottom: '8px' }}>Publicaciones de Instagram</h2>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#555', marginBottom: '20px', fontWeight: 300, lineHeight: 1.6 }}>
+                    Agrega hasta 3 enlaces de publicaciones de Instagram para mostrar en el sitio web. Copia el enlace de la publicación desde Instagram.
+                  </p>
+                  {((data as any).instagramPosts || []).length === 0 && (
+                    <div style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '24px', textAlign: 'center', marginBottom: '16px' }}>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#444', fontWeight: 300 }}>No hay publicaciones agregadas aún.</p>
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#333', marginTop: '4px', fontWeight: 300 }}>Haz clic en "+ Agregar publicación" para comenzar.</p>
+                    </div>
+                  )}
+                  {((data as any).instagramPosts || []).map((url: string, i: number) => (
+                    <div key={i} style={{ backgroundColor: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: '2px', padding: '16px', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#aaa', fontWeight: 500 }}>Publicación {i + 1}</p>
+                        <button className="btn-eliminar" onClick={() => {
+                          const posts = [...((data as any).instagramPosts || [])]
+                          posts.splice(i, 1)
+                          setData({ ...data, instagramPosts: posts } as any)
+                        }}>✕ Eliminar</button>
+                      </div>
+                      <span style={lbl}>ENLACE DE INSTAGRAM</span>
+                      <input
+                        value={url}
+                        onChange={e => {
+                          const posts = [...((data as any).instagramPosts || [])]
+                          posts[i] = e.target.value
+                          setData({ ...data, instagramPosts: posts } as any)
+                        }}
+                        placeholder="https://www.instagram.com/p/CODIGO_POST/"
+                        style={{ ...inp, marginBottom: '8px' }}
+                      />
+                      {url && (
+                        <div style={{ borderRadius: '8px', overflow: 'hidden', border: `1px solid ${BORDER}` }}>
+                          <iframe
+                            src={url.replace(/\/$/, '').replace(/\/\?.*$/, '') + '/embed/'}
+                            style={{ width: '100%', minHeight: '300px', border: 'none', display: 'block' }}
+                            scrolling="no"
+                            title={`Preview ${i + 1}`}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {((data as any).instagramPosts || []).length < 3 && (
+                    <button className="btn-agregar" onClick={() => {
+                      const posts = [...((data as any).instagramPosts || []), '']
+                      setData({ ...data, instagramPosts: posts } as any)
+                    }} style={{ width: '100%', padding: '14px', fontSize: '12px', letterSpacing: '2px', marginTop: '8px', border: '1px solid white', color: 'white' }}>
+                      + Agregar publicación ({((data as any).instagramPosts || []).length}/3)
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
